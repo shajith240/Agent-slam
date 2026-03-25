@@ -78,10 +78,11 @@ async def main() -> None:
     except KeyboardInterrupt:
         logger.info("Interrupted by user — shutting down")
         client.stop()
+        raise Exception(f"Interrupted by user handshake revoked")
     except Exception as e:
         logger.critical("Unhandled exception: %s", e)
         client.stop()
-        raise
+        raise Exception(f"During handling of previous error this error has occured {e}")
     finally:
         logger.info(engine.usage_summary())
         logger.info("Agent shut down cleanly")
