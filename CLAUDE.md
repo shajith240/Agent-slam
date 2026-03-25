@@ -185,7 +185,7 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 [x] src/config.py — written
 [x] src/state_machine.py — written
 [ ] src/ws_client.py — written
-[ ] src/debate_engine.py — written
+[x] src/debate_engine.py — written
 [x] src/strategy.py — written
 [ ] agent.py — written
 [ ] Sandbox tested
@@ -204,12 +204,14 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 - 2026-03-25: src/config.py — env loading + all hardcoded constants
 - 2026-03-25: src/state_machine.py — MatchState dataclass with phase detection, turn tracking, conversation history
 - 2026-03-25: src/strategy.py — 5-phase prompt engine with SYSTEM_BASE + per-phase instructions
+- 2026-03-25: src/debate_engine.py — API caller with web search, 3x retry, token tracking, smart trimming
 
 ---
 
 ## Decisions Log
 
 - 2026-03-25: strategy.py uses 5-phase debate system with phase auto-detection based on message_count and seconds_remaining. Closing phase triggers under 180 seconds remaining. Each phase has a dedicated structured prompt template. Phase instructions are format-string templates so stance/topic are injected at runtime.
+- 2026-03-25: debate_engine.py retries up to 3 times on API failure with 2s delay. Uses web_search_20250305 tool for real source URLs. Text extraction handles multi-block responses from tool use. Trimming finds last sentence boundary to avoid cutting mid-argument.
 
 ---
 
@@ -220,7 +222,7 @@ _(Claude Code logs bugs found, edge cases to handle, and things to revisit)_
 ---
 
 > Last updated: 2026-03-25
-> Next action: Build out src/ws_client.py, src/debate_engine.py, src/strategy.py, and agent.py
+> Next action: Build out src/ws_client.py and agent.py
 
 ---
 
