@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent SLAM 2026 — Match Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --cyan: #00f5ff;
+  --pink: #ff3366;
+  --neutral: #7c7c9a;
+  --success: #00ff88;
+  --warning: #ffaa00;
+  --text-primary: #e8e8ff;
+  --text-secondary: #7c7c9a;
+  --card-bg: #12121a;
+  --border: #1e1e2e;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* ========== SETUP SCREEN ========== */
+#setup-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  z-index: 1000;
+}
+#setup-screen.hidden { display: none; }
+.setup-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  width: 420px;
+  text-align: center;
+}
+.setup-card h1 {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--cyan);
+  margin-bottom: 8px;
+  text-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+}
+.setup-card p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 32px;
+}
+.setup-card label {
+  display: block;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.setup-card input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.setup-card input:focus { border-color: var(--cyan); }
+.setup-card button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--cyan), #0088aa);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: opacity 0.2s;
+}
+.setup-card button:hover { opacity: 0.85; }
+
+/* ========== MAIN LAYOUT ========== */
+#main-screen { display: none; flex-direction: column; height: 100vh; }
+#main-screen.active { display: flex; }
+
+/* TOP BAR */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px; padding: 0 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.top-bar .logo {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: 0 0 15px rgba(0, 245, 255, 0.4);
+  letter-spacing: 2px;
+}
+.status-badge {
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  position: relative;
+}
+.status-badge.live {
+  color: var(--pink);
+  border-color: var(--pink);
+  animation: livePulse 2s ease-in-out infinite;
+}
+.status-badge.live::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--pink);
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+.status-badge.paused { color: var(--warning); border-color: var(--warning); }
+.status-badge.finished { color: var(--success); border-color: var(--success); }
+.timer {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 90px;
+  text-align: right;
+}
+.timer.warning { color: var(--pink); animation: timerShake 10s infinite; }
+
+/* MIDDLE SECTION */
+.middle {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* PANELS */
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.panel:last-child { border-right: none; }
+.panel-left, .panel-right { width: 35%; }
+.panel-center { width: 30%; }
+
+.panel-left.our-turn {
+  animation: cyanBorderPulse 1.5s ease-in-out infinite;
+}
+.panel-right.their-turn {
+  animation: pinkBorderPulse 1.5s ease-in-out infinite;
+}
+
+.team-name {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.team-name.cyan { color: var(--cyan); text-shadow: 0 0 20px rgba(0, 245, 255, 0.3); }
+.team-name.pink { color: var(--pink); text-shadow: 0 0 20px rgba(255, 51, 102, 0.3); }
+
+.stance-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.stance-badge.pro { background: rgba(0, 255, 136, 0.15); color: var(--success); border: 1px solid rgba(0, 255, 136, 0.3); }
+.stance-badge.con { background: rgba(255, 51, 102, 0.15); color: var(--pink); border: 1px solid rgba(255, 51, 102, 0.3); }
+
+.turn-indicator {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 16px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.turn-indicator.active-cyan {
+  background: rgba(0, 245, 255, 0.1);
+  color: var(--cyan);
+  border-color: var(--cyan);
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+.turn-indicator.active-pink {
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--pink);
+  border-color: var(--pink);
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+}
+.stat-row .val {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.phase-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(0, 245, 255, 0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  margin: 8px 0;
+  transition: all 0.3s;
+}
+.phase-badge.flash {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  text-shadow: 0 0 15px #fff;
+}
+
+.last-arg-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+.last-arg {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  word-wrap: break-word;
+}
+.last-arg.cyan-tint { border-color: rgba(0, 245, 255, 0.15); }
+.last-arg.pink-tint { border-color: rgba(255, 51, 102, 0.15); }
+
+/* SCROLLBAR */
+.last-arg::-webkit-scrollbar, .feed::-webkit-scrollbar { width: 4px; }
+.last-arg::-webkit-scrollbar-track, .feed::-webkit-scrollbar-track { background: transparent; }
+.last-arg::-webkit-scrollbar-thumb, .feed::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 2px;
+}
+
+/* CENTER FEED */
+.feed-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+.feed-msg {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  opacity: 0;
+  animation: fadeSlideIn 0.4s forwards;
+}
+.feed-msg.ours {
+  align-self: flex-end;
+  background: rgba(0, 245, 255, 0.08);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  color: var(--text-primary);
+  --slide-from: 30px;
+}
+.feed-msg.opponent {
+  align-self: flex-start;
+  background: rgba(255, 51, 102, 0.08);
+  border: 1px solid rgba(255, 51, 102, 0.2);
+  color: var(--text-primary);
+  --slide-from: -30px;
+}
+.feed-msg.system {
+  align-self: center;
+  background: rgba(124, 124, 154, 0.1);
+  border: 1px solid rgba(124, 124, 154, 0.15);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  max-width: 80%;
+  text-align: center;
+  --slide-from: 0;
+}
+.feed-msg .sender {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.feed-msg.ours .sender { color: var(--cyan); }
+.feed-msg.opponent .sender { color: var(--pink); }
+
+/* BOTTOM BAR */
+.bottom-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 50px; padding: 0 24px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.conn-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.conn-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--neutral);
+}
+.conn-dot.connected { background: var(--success); animation: dotPulse 2s ease-in-out infinite; }
+.conn-dot.disconnected { background: var(--pink); }
+
+.round-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phase-track {
+  display: flex; gap: 3px;
+}
+.phase-seg {
+  width: 40px; height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  transition: background 0.5s;
+  position: relative;
+}
+.phase-seg.active { background: var(--cyan); box-shadow: 0 0 8px rgba(0, 245, 255, 0.4); }
+.phase-seg.done { background: rgba(0, 245, 255, 0.3); }
+.phase-seg-label {
+  position: absolute;
+  bottom: 12px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.phase-seg:hover .phase-seg-label { opacity: 1; }
+
+/* OVERLAYS */
+.overlay {
+  position: fixed; inset: 0;
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 900;
+}
+.overlay.active { display: flex; }
+
+#disconnect-overlay {
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(8px);
+}
+#disconnect-overlay .overlay-content {
+  text-align: center;
+}
+#disconnect-overlay .overlay-content h2 {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--pink);
+  margin-bottom: 16px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 30px rgba(255, 51, 102, 0.5);
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+#disconnect-overlay p {
+  font-size: 13px; color: var(--text-secondary);
+}
+
+#finish-overlay {
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+}
+#finish-overlay .overlay-content {
+  text-align: center;
+  animation: finishFlash 0.6s ease-out;
+}
+#finish-overlay h2 {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  color: var(--success);
+  margin-bottom: 12px;
+  letter-spacing: 4px;
+  text-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+}
+#finish-overlay .final-stats {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 2;
+}
+#finish-overlay .final-stats span {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes cyanBorderPulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(0, 245, 255, 0.1); }
+  50% { box-shadow: inset 0 0 0 2px rgba(0, 245, 255, 0.5), 0 0 30px rgba(0, 245, 255, 0.1); }
+}
+@keyframes pinkBorderPulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(255, 51, 102, 0.1); }
+  50% { box-shadow: inset 0 0 0 2px rgba(255, 51, 102, 0.5), 0 0 30px rgba(255, 51, 102, 0.1); }
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(255, 51, 102, 0.25); }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(var(--slide-from, 0)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes timerShake {
+  0%, 95%, 100% { transform: translateX(0); }
+  96% { transform: translateX(-3px); }
+  97% { transform: translateX(3px); }
+  98% { transform: translateX(-2px); }
+  99% { transform: translateX(2px); }
+}
+@keyframes finishFlash {
+  0% { opacity: 0; transform: scale(1.1); }
+  50% { opacity: 1; }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h1>AGENT SLAM 2026</h1>
+    <p>Match Monitor — Read-Only Observer</p>
+    <label for="ws-url-input">WebSocket URL</label>
+    <input type="text" id="ws-url-input" placeholder="wss://server.example.com/ws">
+    <label for="team-input">Your Team Name</label>
+    <input type="text" id="team-input" placeholder="team1">
+    <button id="connect-btn">Connect</button>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="logo">AGENT SLAM 2026</div>
+    <div class="status-badge" id="status-badge">WAITING</div>
+    <div class="timer" id="timer">--:--</div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div class="middle">
+    <!-- LEFT: OUR AGENT -->
+    <div class="panel panel-left" id="panel-left">
+      <div class="team-name cyan" id="our-team-name">--</div>
+      <div><span class="stance-badge" id="our-stance">--</span></div>
+      <div class="turn-indicator" id="our-turn-ind">WAITING</div>
+      <div class="stat-row"><span>Messages sent</span><span class="val" id="our-msg-count">0</span></div>
+      <div class="stat-row"><span>Phase</span><span class="val"><span class="phase-badge" id="phase-badge">--</span></span></div>
+      <div class="stat-row"><span>Tokens used</span><span class="val" id="tokens-used">0</span></div>
+      <div class="stat-row"><span>Est. cost</span><span class="val" id="est-cost">₹0.00</span></div>
+      <div class="last-arg-label">Last Argument Sent</div>
+      <div class="last-arg cyan-tint" id="our-last-arg">Waiting for match to begin...</div>
+    </div>
+
+    <!-- CENTER: FEED -->
+    <div class="panel panel-center">
+      <div class="feed-header">Match Feed</div>
+      <div class="feed" id="feed"></div>
+    </div>
+
+    <!-- RIGHT: OPPONENT -->
+    <div class="panel panel-right" id="panel-right">
+      <div class="team-name pink" id="opp-team-name">--</div>
+      <div><span class="stance-badge" id="opp-stance">--</span></div>
+      <div class="turn-indicator" id="opp-turn-ind">WAITING</div>
+      <div class="stat-row"><span>Messages sent</span><span class="val" id="opp-msg-count">0</span></div>
+      <div class="stat-row"><span>Last message</span><span class="val" id="opp-msg-len">--</span></div>
+      <div class="stat-row"><span>Connection</span><span class="val" id="opp-conn">--</span></div>
+      <div class="last-arg-label">Last Opponent Argument</div>
+      <div class="last-arg pink-tint" id="opp-last-arg">Waiting for opponent...</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="conn-status">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-text">Disconnected</span>
+    </div>
+    <div class="round-name" id="round-name">--</div>
+    <div class="phase-track" id="phase-track">
+      <div class="phase-seg" data-phase="opening"><span class="phase-seg-label">Open</span></div>
+      <div class="phase-seg" data-phase="rebuttal_first"><span class="phase-seg-label">Rebut</span></div>
+      <div class="phase-seg" data-phase="cross_examination"><span class="phase-seg-label">Cross</span></div>
+      <div class="phase-seg" data-phase="defense"><span class="phase-seg-label">Defend</span></div>
+      <div class="phase-seg" data-phase="closing"><span class="phase-seg-label">Close</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="overlay" id="disconnect-overlay">
+  <div class="overlay-content">
+    <div class="spinner"></div>
+    <h2>CONNECTION LOST</h2>
+    <p>Attempting to reconnect...</p>
+  </div>
+</div>
+
+<div class="overlay" id="finish-overlay">
+  <div class="overlay-content">
+    <h2>MATCH COMPLETE</h2>
+    <div class="final-stats" id="final-stats"></div>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  WS_URL: "",
+  TEAM_NAME: "",
+};
+
+const PHASES_ORDER = ["opening", "rebuttal_first", "cross_examination", "defense", "closing"];
+const PHASE_LABELS = {
+  opening: "OPENING",
+  rebuttal_first: "REBUTTAL",
+  cross_examination: "CROSS-EXAM",
+  defense: "DEFENSE",
+  closing: "CLOSING",
+};
+
+const state = {
+  team1: "", team2: "", topic: "", description: "", round: "",
+  finishTime: 0, pros: "", cons: "", turn: "", status: "pending",
+  conversation: [], ourTeam: "", messageCount: 0, oppMessageCount: 0,
+  connected: false, lastPhase: "",
+};
+
+let ws = null;
+let timerInterval = null;
+
+// ===== DOM refs =====
+const $ = (id) => document.getElementById(id);
+
+// ===== SETUP =====
+function initSetup() {
+  const savedUrl = localStorage.getItem("slam_ws_url") || "";
+  const savedTeam = localStorage.getItem("slam_team") || "";
+  $("ws-url-input").value = savedUrl;
+  $("team-input").value = savedTeam;
+
+  $("connect-btn").addEventListener("click", () => {
+    const url = $("ws-url-input").value.trim();
+    const team = $("team-input").value.trim();
+    if (!url || !team) return;
+    CONFIG.WS_URL = url;
+    CONFIG.TEAM_NAME = team;
+    state.ourTeam = team;
+    localStorage.setItem("slam_ws_url", url);
+    localStorage.setItem("slam_team", team);
+    $("setup-screen").classList.add("hidden");
+    $("main-screen").classList.add("active");
+    $("our-team-name").textContent = team;
+    connectWS();
+  });
+}
+
+// ===== WEBSOCKET =====
+function connectWS() {
+  try { ws = new WebSocket(CONFIG.WS_URL); } catch (e) { return; }
+
+  ws.onopen = () => {
+    state.connected = true;
+    updateConnStatus(true);
+    $("disconnect-overlay").classList.remove("active");
+    addSystemMsg("Connected to match server");
+  };
+
+  ws.onclose = () => {
+    state.connected = false;
+    updateConnStatus(false);
+    if (state.status !== "completed") {
+      $("disconnect-overlay").classList.add("active");
+      setTimeout(connectWS, 3000);
+    }
+  };
+
+  ws.onerror = () => {};
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      handleMessage(parsed);
+    } catch (e) {}
+  };
+}
+
+// ===== MESSAGE ROUTER =====
+function handleMessage(parsed) {
+  const type = parsed.type;
+  const data = parsed.data || {};
+
+  switch (type) {
+    case "welcome":
+      addSystemMsg(data.message || "Welcome");
+      break;
+    case "match-state":
+      handleMatchState(data);
+      break;
+    case "match-update":
+      handleMatchUpdate(data);
+      break;
+    case "debate-message":
+      handleDebateMessage(parsed);
+      break;
+    case "match-paused":
+      state.status = "paused";
+      updateStatusBadge();
+      addSystemMsg("Match paused");
+      break;
+    case "match-resumed":
+      handleMatchResumed(data);
+      break;
+    case "match-finish":
+      handleMatchFinish();
+      break;
+    case "previous-message":
+      handlePreviousMessages(data);
+      break;
+    case "error":
+      addSystemMsg("Error: " + (data.message || "Unknown"));
+      break;
+    case "info":
+      addSystemMsg(data.message || "Info");
+      break;
+  }
+}
+
+// ===== HANDLERS =====
+function handleMatchState(data) {
+  state.team1 = data.team1 || state.team1;
+  state.team2 = data.team2 || state.team2;
+  state.topic = data.topic || state.topic;
+  state.description = data.description || state.description;
+  state.round = data.round || state.round;
+  state.finishTime = data.finishTime || state.finishTime;
+  state.pros = data.pros || state.pros;
+  state.cons = data.cons || state.cons;
+  state.turn = data.turn || state.turn;
+  state.status = data.status || state.status;
+  updateAll();
+}
+
+function handleMatchUpdate(data) {
+  state.finishTime = data.finishTime || state.finishTime;
+  state.status = "started";
+  addSystemMsg("Match started!");
+  updateAll();
+  startTimer();
+}
+
+function handleDebateMessage(parsed) {
+  const team = parsed.from;
+  const msg = (parsed.data || {}).message || "";
+  const ts = parsed.timestamp || "";
+  const isOurs = team === state.ourTeam;
+
+  state.conversation.push({ team, message: msg, timestamp: ts, isOurs });
+
+  if (isOurs) {
+    state.messageCount++;
+    $("our-last-arg").textContent = msg;
+  } else {
+    state.oppMessageCount++;
+    $("opp-last-arg").textContent = msg;
+    $("opp-msg-len").textContent = msg.length + " chars";
+  }
+
+  addChatMsg(msg, isOurs, team);
+  updateAll();
+}
+
+function handleMatchResumed(data) {
+  if (data.finishTime) state.finishTime = data.finishTime;
+  state.status = "started";
+  addSystemMsg("Match resumed");
+  updateAll();
+  startTimer();
+}
+
+function handleMatchFinish() {
+  state.status = "completed";
+  updateAll();
+  if (timerInterval) clearInterval(timerInterval);
+
+  const stats = $("final-stats");
+  stats.innerHTML = `
+    <p>Topic: <span>${state.topic}</span></p>
+    <p>Our team: <span>${state.ourTeam}</span> (${getOurStance()})</p>
+    <p>Messages sent: <span>${state.messageCount}</span></p>
+    <p>Opponent messages: <span>${state.oppMessageCount}</span></p>
+    <p>Total exchanges: <span>${state.conversation.length}</span></p>
+  `;
+  $("finish-overlay").classList.add("active");
+}
+
+function handlePreviousMessages(data) {
+  const convs = data.conversations || [];
+  convs.forEach((entry) => {
+    const isOurs = entry.team === state.ourTeam;
+    state.conversation.push({
+      team: entry.team || "",
+      message: entry.message || "",
+      timestamp: entry.timestamp || "",
+      isOurs,
+    });
+    if (isOurs) state.messageCount++;
+    else state.oppMessageCount++;
+    addChatMsg(entry.message || "", isOurs, entry.team || "");
+  });
+  addSystemMsg("Loaded " + convs.length + " previous messages");
+  updateAll();
+}
+
+// ===== UI UPDATES =====
+function updateAll() {
+  updateTeams();
+  updateStatusBadge();
+  updateTurnIndicators();
+  updatePhase();
+  updateStats();
+  updatePhaseTrack();
+  $("round-name").textContent = state.round || "--";
+}
+
+function updateTeams() {
+  const oppTeam = getOpponentName();
+  $("opp-team-name").textContent = oppTeam || "--";
+
+  const ourStance = getOurStance();
+  const oppStance = ourStance === "PRO" ? "CON" : "PRO";
+
+  const ourBadge = $("our-stance");
+  ourBadge.textContent = ourStance;
+  ourBadge.className = "stance-badge " + (ourStance === "PRO" ? "pro" : "con");
+
+  const oppBadge = $("opp-stance");
+  oppBadge.textContent = oppStance;
+  oppBadge.className = "stance-badge " + (oppStance === "PRO" ? "pro" : "con");
+
+  $("opp-conn").textContent = state.status === "started" ? "Active" : state.status;
+}
+
+function updateStatusBadge() {
+  const badge = $("status-badge");
+  badge.className = "status-badge";
+  if (state.status === "started") {
+    badge.textContent = "LIVE";
+    badge.classList.add("live");
+  } else if (state.status === "paused") {
+    badge.textContent = "PAUSED";
+    badge.classList.add("paused");
+  } else if (state.status === "completed") {
+    badge.textContent = "FINISHED";
+    badge.classList.add("finished");
+  } else {
+    badge.textContent = "WAITING";
+  }
+}
+
+function updateTurnIndicators() {
+  const isOurTurn = state.turn === state.ourTeam && state.status === "started";
+  const isTheirTurn = state.turn && state.turn !== state.ourTeam && state.status === "started";
+
+  const ourInd = $("our-turn-ind");
+  ourInd.textContent = isOurTurn ? "OUR TURN" : "WAITING";
+  ourInd.className = "turn-indicator" + (isOurTurn ? " active-cyan" : "");
+
+  const oppInd = $("opp-turn-ind");
+  oppInd.textContent = isTheirTurn ? "THEIR TURN" : "WAITING";
+  oppInd.className = "turn-indicator" + (isTheirTurn ? " active-pink" : "");
+
+  const panelL = $("panel-left");
+  panelL.classList.toggle("our-turn", isOurTurn);
+
+  const panelR = $("panel-right");
+  panelR.classList.toggle("their-turn", isTheirTurn);
+}
+
+function updatePhase() {
+  const phase = getPhase();
+  const badge = $("phase-badge");
+  const label = PHASE_LABELS[phase] || phase.toUpperCase();
+
+  if (state.lastPhase && state.lastPhase !== phase) {
+    badge.classList.add("flash");
+    setTimeout(() => badge.classList.remove("flash"), 500);
+  }
+  state.lastPhase = phase;
+  badge.textContent = label;
+}
+
+function updateStats() {
+  $("our-msg-count").textContent = state.messageCount;
+  $("opp-msg-count").textContent = state.oppMessageCount;
+}
+
+function updatePhaseTrack() {
+  const current = getPhase();
+  const idx = PHASES_ORDER.indexOf(current);
+  const segs = document.querySelectorAll(".phase-seg");
+  segs.forEach((seg, i) => {
+    seg.classList.remove("active", "done");
+    if (i < idx) seg.classList.add("done");
+    else if (i === idx) seg.classList.add("active");
+  });
+}
+
+function updateConnStatus(connected) {
+  const dot = $("conn-dot");
+  const text = $("conn-text");
+  dot.className = "conn-dot " + (connected ? "connected" : "disconnected");
+  text.textContent = connected ? "Connected" : "Disconnected";
+}
+
+// ===== TIMER =====
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 500);
+}
+
+function updateTimer() {
+  const el = $("timer");
+  if (!state.finishTime) { el.textContent = "--:--"; return; }
+  const remaining = Math.max(0, Math.floor((state.finishTime - Date.now()) / 1000));
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  el.textContent = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+  el.className = "timer" + (remaining < 60 ? " warning" : "");
+  if (remaining <= 0 && timerInterval) clearInterval(timerInterval);
+}
+
+// ===== FEED =====
+function addChatMsg(text, isOurs, team) {
+  const feed = $("feed");
+  const div = document.createElement("div");
+  div.className = "feed-msg " + (isOurs ? "ours" : "opponent");
+  const senderDiv = document.createElement("div");
+  senderDiv.className = "sender";
+  senderDiv.textContent = isOurs ? (state.ourTeam || "US") : (team || "OPPONENT");
+  div.appendChild(senderDiv);
+  const preview = text.length > 300 ? text.substring(0, 300) + "..." : text;
+  div.appendChild(document.createTextNode(preview));
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function addSystemMsg(text) {
+  const feed = $("feed");
+  const div = document.createElement("div");
+  div.className = "feed-msg system";
+  div.textContent = text;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ===== HELPERS =====
+function getOurStance() {
+  if (state.ourTeam === state.pros) return "PRO";
+  return "CON";
+}
+
+function getOpponentName() {
+  if (state.team1 && state.team1 !== state.ourTeam) return state.team1;
+  if (state.team2 && state.team2 !== state.ourTeam) return state.team2;
+  return "";
+}
+
+function getPhase() {
+  if (state.messageCount === 0) return "opening";
+  const remaining = state.finishTime ? Math.max(0, (state.finishTime - Date.now()) / 1000) : 999;
+  if (remaining < 180) return "closing";
+  if (state.messageCount === 1) return "rebuttal_first";
+  if (state.messageCount <= 3) return "cross_examination";
+  return "defense";
+}
+
+// ===== INIT =====
+initSetup();
+</script>
+</body>
+</html>
