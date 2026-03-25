@@ -186,7 +186,7 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 [x] src/state_machine.py — written
 [ ] src/ws_client.py — written
 [ ] src/debate_engine.py — written
-[ ] src/strategy.py — written
+[x] src/strategy.py — written
 [ ] agent.py — written
 [ ] Sandbox tested
 [ ] WS credentials received from admin
@@ -203,12 +203,13 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 - 2026-03-25: CLAUDE.md committed
 - 2026-03-25: src/config.py — env loading + all hardcoded constants
 - 2026-03-25: src/state_machine.py — MatchState dataclass with phase detection, turn tracking, conversation history
+- 2026-03-25: src/strategy.py — 5-phase prompt engine with SYSTEM_BASE + per-phase instructions
 
 ---
 
 ## Decisions Log
 
-_(Claude Code logs every architectural or strategic decision here with reasoning, so future sessions know why things are the way they are)_
+- 2026-03-25: strategy.py uses 5-phase debate system with phase auto-detection based on message_count and seconds_remaining. Closing phase triggers under 180 seconds remaining. Each phase has a dedicated structured prompt template. Phase instructions are format-string templates so stance/topic are injected at runtime.
 
 ---
 
