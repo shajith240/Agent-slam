@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 from src.config import WS_URL, SANDBOX_WS_URL, TEAM_NAME, ANTHROPIC_API_KEY, MODEL
 from src.state_machine import MatchState
-from src.debate_engine_demo import DebateEngine
+from src.debate_engine import DebateEngine
 from src.ws_client import WSClient
 
 
@@ -71,7 +71,11 @@ async def main() -> None:
     state = MatchState()
     state.our_team = TEAM_NAME
     engine = DebateEngine()
-    client = WSClient(ws_url, state, engine)
+
+    # Pass sandbox=True so WSClient sends "sandbox-message" type instead of
+    # "debate-message" — the sandbox endpoint requires this different type.
+    # Reference: User Manual section 6.4 (sandbox-message format).
+    client = WSClient(ws_url, state, engine, sandbox=sandbox)
 
     try:
         await client.connect()

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class WSClient:
 
-    def __init__(self, ws_url: str, state: MatchState, engine: DebateEngine):
+    def __init__(self, ws_url: str, state: MatchState, engine: DebateEngine, sandbox: bool = False):
         self.ws_url = ws_url
         self.state = state
         self.engine = engine
@@ -24,6 +24,21 @@ class WSClient:
         self.running = True
         self.reconnect_attempts = 0
         self.last_disconnect_time = 0.0
+
+        # ---------------------------------------------------------------
+        # sandbox FLAG — WHY THIS EXISTS:
+        #
+        # The sandbox endpoint uses a DIFFERENT message type than live match.
+        # Live match:  { "type": "debate-message", "data": { "message": "..." } }
+        # Sandbox:     { "type": "sandbox-message", "data": { "message": "..." } }
+        #
+        # Sending "debate-message" to the sandbox endpoint returns:
+        #   "Invalid format. Send JSON: { 'type': 'sandbox-message', ... }"
+        # This flag is set from agent.py via --sandbox CLI arg and switches
+        # the outgoing message type accordingly in take_turn().
+        # Reference: User Manual section 6.4 (sandbox-message type).
+        # ---------------------------------------------------------------
+        self.sandbox = sandbox
 
         # ---------------------------------------------------------------
         # _turn_in_progress FLAG — WHY THIS EXISTS:
@@ -42,8 +57,8 @@ class WSClient:
         # Fix: set this flag to True the moment we START generating an argument.
         # Any subsequent take_turn() call checks this flag first and exits
         # immediately if a turn is already being processed.
-        # The flag is reset to False inside record_our_message() after we
-        # successfully send, so the next turn starts clean.
+        # The flag is reset to False after send completes so the next turn
+        # starts clean.
         # ---------------------------------------------------------------
         self._turn_in_progress = False
 
@@ -126,6 +141,12 @@ class WSClient:
 
                 elif msg_type == "debate-message":
                     await self.handle_debate_message(parsed)
+
+                elif msg_type == "sandbox-message":
+                    # Sandbox echo — server reflects our message back.
+                    # Treat it like a debate-message from the opponent for
+                    # testing purposes so the agent generates a response.
+                    logger.info("Sandbox echo: %s", data.get("message", "")[:100])
 
                 elif msg_type == "match-paused":
                     self.state.status = "paused"
@@ -220,7 +241,7 @@ class WSClient:
         logger.info("Loaded %d previous messages", len(conversations))
 
     async def take_turn(self) -> None:
-        if not self.state.is_our_turn:
+        if not self.state.is_our_turn and not self.sandbox:
             logger.debug("take_turn called but not our turn, skipping")
             return
 
@@ -228,7 +249,7 @@ class WSClient:
         # Both `debate-message` and the following `match-state` can call
         # take_turn() within milliseconds of each other for the same turn.
         # This flag ensures only the FIRST call proceeds; the second is
-        # dropped immediately. The flag is cleared in record_our_message()
+        # dropped immediately. The flag is cleared after send completes
         # so the next turn starts fresh.
         if self._turn_in_progress:
             logger.debug("Turn already in progress — skipping duplicate trigger")
@@ -247,14 +268,21 @@ class WSClient:
         try:
             argument = self.engine.generate_argument(self.state)
 
+            # SANDBOX vs LIVE message type:
+            # Sandbox endpoint requires "sandbox-message" type.
+            # Live match endpoint requires "debate-message" type.
+            # Sending the wrong type causes an "Invalid format" server error.
+            # Reference: User Manual section 6.4.
+            msg_type = "sandbox-message" if self.sandbox else "debate-message"
+
             payload = {
-                "type": "debate-message",
+                "type": msg_type,
                 "data": {"message": argument},
             }
             await self.send_json(payload)
 
             self.state.record_our_message(argument)
-            logger.info("Sent argument: %d chars", len(argument))
+            logger.info("Sent argument [%s]: %d chars", msg_type, len(argument))
 
         except Exception as e:
             logger.error("Failed to send argument: %s", e)
