@@ -638,6 +638,15 @@ let timerInterval = null;
 // ===== DOM refs =====
 const $ = (id) => document.getElementById(id);
 
+// ===== TEAM MATCHING (case-insensitive) =====
+// FIX: All team comparisons use this helper.
+// Root cause of reversed alignment: server sends "team2" but user may type
+// "Team2" in the setup screen, causing isOurs to always be false.
+function isSameTeam(a, b) {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 // ===== SETUP =====
 function initSetup() {
   const savedUrl = localStorage.getItem("slam_ws_url") || "";
@@ -759,7 +768,8 @@ function handleDebateMessage(parsed) {
   const team = parsed.from;
   const msg = (parsed.data || {}).message || "";
   const ts = parsed.timestamp || "";
-  const isOurs = team === state.ourTeam;
+  // FIX: was `team === state.ourTeam` — strict equality failed on casing mismatch
+  const isOurs = isSameTeam(team, state.ourTeam);
 
   state.conversation.push({ team, message: msg, timestamp: ts, isOurs });
 
@@ -803,7 +813,8 @@ function handleMatchFinish() {
 function handlePreviousMessages(data) {
   const convs = data.conversations || [];
   convs.forEach((entry) => {
-    const isOurs = entry.team === state.ourTeam;
+    // FIX: was `entry.team === state.ourTeam`
+    const isOurs = isSameTeam(entry.team, state.ourTeam);
     state.conversation.push({
       team: entry.team || "",
       message: entry.message || "",
@@ -865,8 +876,9 @@ function updateStatusBadge() {
 }
 
 function updateTurnIndicators() {
-  const isOurTurn = state.turn === state.ourTeam && state.status === "started";
-  const isTheirTurn = state.turn && state.turn !== state.ourTeam && state.status === "started";
+  // FIX: was `state.turn === state.ourTeam` — strict equality
+  const isOurTurn = isSameTeam(state.turn, state.ourTeam) && state.status === "started";
+  const isTheirTurn = state.turn && !isSameTeam(state.turn, state.ourTeam) && state.status === "started";
 
   const ourInd = $("our-turn-ind");
   ourInd.textContent = isOurTurn ? "OUR TURN" : "WAITING";
@@ -962,13 +974,15 @@ function addSystemMsg(text) {
 
 // ===== HELPERS =====
 function getOurStance() {
-  if (state.ourTeam === state.pros) return "PRO";
+  // FIX: was `state.ourTeam === state.pros`
+  if (isSameTeam(state.ourTeam, state.pros)) return "PRO";
   return "CON";
 }
 
 function getOpponentName() {
-  if (state.team1 && state.team1 !== state.ourTeam) return state.team1;
-  if (state.team2 && state.team2 !== state.ourTeam) return state.team2;
+  // FIX: was `state.team1 !== state.ourTeam`
+  if (state.team1 && !isSameTeam(state.team1, state.ourTeam)) return state.team1;
+  if (state.team2 && !isSameTeam(state.team2, state.ourTeam)) return state.team2;
   return "";
 }
 
