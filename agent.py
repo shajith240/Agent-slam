@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 from src.config import WS_URL, SANDBOX_WS_URL, TEAM_NAME, ANTHROPIC_API_KEY, MODEL
 from src.state_machine import MatchState
-from src.debate_engine import DebateEngine
+from src.debate_engine_demo import DebateEngine
 from src.ws_client import WSClient
 
 
