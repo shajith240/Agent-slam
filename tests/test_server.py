@@ -138,6 +138,9 @@ async def handle_bot(ws, first_msg=None):
                 # Switch turn to opponent
                 await send(ws, match.match_state("started", match.opp_team))
 
+                # Tell dashboard turn switched to opponent (their turn to paste)
+                await to_dash(match.match_state("started", match.opp_team))
+
                 await to_dash({
                     "type": "server-event",
                     "data": {"message": f"Bot sent #{match.bot_msgs} ({len(text)} chars). Paste opponent response."},
@@ -205,8 +208,8 @@ async def cmd_start(data):
         return
 
     # Prevent re-starting if match already running
-    if match.started and match.bot_msgs > 0:
-        log.warning("Match already in progress (bot has sent %d msgs). Ignoring start-match.", match.bot_msgs)
+    if match.started:
+        log.warning("Match already in progress. Ignoring duplicate start-match.")
         await to_dash({"type": "server-event", "data": {"message": "Match already in progress. Ignoring duplicate start."}})
         return
 
@@ -232,6 +235,9 @@ async def cmd_start(data):
 
     # Single match-state(started) — the ONLY trigger for opening argument
     await send(bot, match.match_state("started", match.bot_team))
+
+    # Also send match-state to dashboard so it has full state
+    await to_dash(match.match_state("started", match.bot_team))
 
     await to_dash({
         "type": "server-event",

@@ -203,8 +203,9 @@
 <script>
 (function(){
   var ws = null, team = "", turn = "", pros = "", cons = "";
-  var finishMs = 0, tick = null;
+  var finishMs = 0, tick = null, keepalive = null;
   var botN = 0, oppN = 0, botChars = 0, mStatus = "pending";
+  var connecting = false;
 
   function $(id){return document.getElementById(id)}
   function same(a,b){return(a||"").trim().toLowerCase()===(b||"").trim().toLowerCase()}
@@ -228,6 +229,7 @@
 
   // ── Connect ──────────────────────────────
   $("btn-go").addEventListener("click", function(){
+    if(connecting)return;
     var url=$("i-url").value.trim();
     team=$("i-team").value.trim();
     var topic=$("i-topic").value.trim();
@@ -236,6 +238,7 @@
     if(!url){showErr("Enter server URL");return}
     if(!team){showErr("Enter team name");return}
 
+    connecting=true;
     this.disabled=true;
     this.textContent="Connecting...";
     hideErr();
@@ -243,14 +246,17 @@
 
     // Close any existing connection
     if(ws){try{ws.close()}catch(e){}}
+    ws=null;
 
     try{ws=new WebSocket(url)}
-    catch(e){showErr("Bad URL: "+e.message);resetSetup();return}
+    catch(e){showErr("Bad URL: "+e.message);connecting=false;resetSetup();return}
 
     var opened=false;
+    var startTopic=topic, startDur=dur;
 
     ws.onopen=function(){
       opened=true;
+      connecting=false;
       ws.send(JSON.stringify({type:"dashboard-hello"}));
 
       // Switch to app view
@@ -258,15 +264,20 @@
       $("app").classList.remove("hide");
       $("dot").className="dot on";
       $("v-us").textContent=team;
-      $("v-topic").textContent=topic||"--";
+      $("v-topic").textContent=startTopic||"--";
       startTick();
+      startKeepalive();
 
-      // Send start-match
-      ws.send(JSON.stringify({
-        type:"start-match",
-        data:{topic:topic,description:"",round:"Round 1",botTeam:team,durationSeconds:dur}
-      }));
-      log("Connected. Match started (bot="+team+", "+dur+"s)");
+      // Send start-match after a short delay to let server register us as dashboard
+      setTimeout(function(){
+        if(ws&&ws.readyState===1){
+          ws.send(JSON.stringify({
+            type:"start-match",
+            data:{topic:startTopic,description:"",round:"Round 1",botTeam:team,durationSeconds:startDur}
+          }));
+          log("Connected. Match started (bot="+team+", "+startDur+"s)");
+        }
+      },200);
     };
 
     ws.onmessage=function(ev){
@@ -277,6 +288,7 @@
     ws.onerror=function(){
       if(!opened){
         showErr("Connection failed. Is test_server.py running?");
+        connecting=false;
         resetSetup();
       } else {
         log("WebSocket error","e");
@@ -284,8 +296,10 @@
     };
 
     ws.onclose=function(ev){
+      stopKeepalive();
       if(!opened){
         showErr("Could not connect (code "+ev.code+")");
+        connecting=false;
         resetSetup();
       } else {
         log("Disconnected (code "+ev.code+")","w");
@@ -296,10 +310,15 @@
     };
   });
 
+  function startKeepalive(){stopKeepalive();keepalive=setInterval(function(){if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:"ping"}))},25000)}
+  function stopKeepalive(){if(keepalive){clearInterval(keepalive);keepalive=null}}
+
   function disconnect(){
     if(ws){try{ws.close()}catch(e){}}
     ws=null;
+    connecting=false;
     stopTick();
+    stopKeepalive();
     $("app").classList.add("hide");
     $("setup").classList.remove("hide");
     resetSetup();

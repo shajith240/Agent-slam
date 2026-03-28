@@ -122,7 +122,10 @@ async def main() -> None:
             )
     # ─────────────────────────────────────────────────────────────────────────
 
-    engine = DebateEngine()
+    no_search = "--no-search" in sys.argv
+    engine = DebateEngine(use_web_search=not no_search)
+    if no_search:
+        logger.info("Web search DISABLED (--no-search flag). Using reasoning only.")
     client = WSClient(ws_url, state, engine, sandbox=sandbox)
 
     try:

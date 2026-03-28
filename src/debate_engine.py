@@ -70,8 +70,9 @@ EMERGENCY_CLOSING_CON = (
 
 class DebateEngine:
 
-    def __init__(self):
+    def __init__(self, use_web_search: bool = True):
         self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.use_web_search = use_web_search
         self.call_count = 0
         self.total_input_tokens = 0
         self.total_output_tokens = 0
@@ -89,13 +90,15 @@ class DebateEngine:
                 )
                 start_time = time.time()
 
-                response = self.client.messages.create(
-                    model=MODEL,
-                    max_tokens=MAX_TOKENS,
-                    system=system_prompt,
-                    tools=[{"type": "web_search_20250305", "name": "web_search"}],
-                    messages=[{"role": "user", "content": user_prompt}],
-                )
+                kwargs = {
+                    "model": MODEL,
+                    "max_tokens": MAX_TOKENS,
+                    "system": system_prompt,
+                    "messages": [{"role": "user", "content": user_prompt}],
+                }
+                if self.use_web_search:
+                    kwargs["tools"] = [{"type": "web_search_20250305", "name": "web_search"}]
+                response = self.client.messages.create(**kwargs)
 
                 elapsed = time.time() - start_time
                 logger.info("API responded in %.1fs", elapsed)
