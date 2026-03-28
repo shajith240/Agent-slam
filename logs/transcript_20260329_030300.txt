@@ -1,0 +1,151 @@
+03:03:05  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 599s
+03:03:57  
+------------------------------------------------------------
+[US — FAST] (2566 chars, 12.8s, phase=rebuttal_first):
+The US tariffs imposed in 2025 represent a strategic recalibration that strengthens American economic sovereignty and generates substantial benefits that outweigh any short-term adjustments.
+
+First, these tariffs have delivered unprecedented revenue generation that directly strengthens federal finances. In calendar year 2025, customs duties raised $264 billion for the federal government, compared to $79 billion in calendar year 2024 (Source: https://taxfoundation.org/research/all/federal/trump-tariffs-trade-war/). This represents more than a tripling of tariff revenue in a single year. Looking forward, all tariffs imposed in 2025 raise about $2.7 trillion over 2026-35, with net dynamic revenue of $2.3 trillion (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). This massive influx of government funding can finance infrastructure, reduce deficits, or support critical programs without increasing income taxes on American workers.
+
+Second, the tariffs are successfully revitalizing American manufacturing and strategic industries. In March 2025, the US imposed 25% tariffs on all steel and aluminum imports, including derivative products, directly protecting domestic production capabilities (Source: https://en.wikipedia.org/wiki/Tariffsinthesecondtrump_administration). The results speak clearly: US manufacturing output expands by 2.9% as a direct result of the tariffs (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). This represents real jobs, real factories, and real industrial capacity returning to American soil after decades of outsourcing.
+
+Third, the catastrophic predictions about these tariffs have proven dramatically overblown. Unprecedented tariff increases last year by the Trump administration have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). Furthermore, the tariffs are achieving the administration's objectives of raising federal revenue and decoupling trade with China (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). They have also proven their diplomatic effectiveness: the United States and China reduced the tariffs imposed in April 2025 from 125% to 10% on each other's goods after successful negotiations (Source: https://www.congress.gov/crs-product/R48549).
+
+The global economy benefits when America rebuilds its industrial base, generates sustainable revenue, and negotiates from strength rather than dependency.
+------------------------------------------------------------
+03:03:57  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 547s
+03:04:02  
+============================================================
+[OPPONENT] (1099 chars):
+The US tariffs imposed in 2025 represent the most destructive trade policy in modern American history. First, these tariffs function as a hidden tax on American consumers. The Peterson Institute for International Economics estimates that the 2025 tariff regime will cost the average American household between $1,900 and $2,600 annually in higher prices across everyday goods from electronics to groceries. Second, the tariffs have triggered retaliatory measures from every major trading partner. The EU imposed 25% counter-tariffs on American agricultural exports, China restricted rare earth mineral exports critical to US tech manufacturing, and Canada levied duties on American energy products. This cascade of retaliation shrinks global trade volume and harms exporters on all sides. Third, global supply chains built over decades cannot be rewired overnight. Companies are not reshoring manufacturing to America — they are redirecting to Vietnam, India, and Mexico, meaning American workers see no job gains while paying higher prices. The tariffs are economic self-harm disguised as strength.
+============================================================
+03:04:15  
+------------------------------------------------------------
+[US — FAST] (2644 chars, 12.7s, phase=cross_examination):
+The opponent claims "Companies are not reshoring manufacturing to America — they are redirecting to Vietnam, India, and Mexico, meaning American workers see no job gains while paying higher prices." This statement is demonstrably false. US manufacturing output expands by 2.9% as a direct result of the tariffs (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). You cannot have manufacturing output expansion without corresponding industrial activity, factory operations, and workforce engagement on American soil. The opponent wants you to ignore measurable production growth because it destroys their entire narrative.
+
+The Peterson Institute figures the opponent cites completely ignore the revenue side of the equation. Yes, tariffs impose costs, but they simultaneously generated $264 billion in federal revenue in calendar year 2025 compared to $79 billion in 2024 (Source: https://taxfoundation.org/research/all/federal/trump-tariffs-trade-war/). That $185 billion revenue surge flows directly into government coffers that can fund infrastructure, healthcare, education, and deficit reduction. The opponent presents only half the ledger while pretending they showed you the full balance sheet.
+
+Their retaliation narrative misses the actual outcome: tariffs work as negotiation leverage. The United States and China reduced the tariffs imposed in April 2025 from 125% to 10% on each other's goods after successful negotiations (Source: https://www.congress.gov/crs-product/R48549). The opponent calls this self-harm, yet somehow America successfully brought the world's second-largest economy to the negotiating table and achieved a 92% tariff reduction. That is not weakness, that is strategic economic statecraft delivering concrete results.
+
+Most critically, unprecedented tariff increases last year by the Trump administration have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). Where is the economic catastrophe the opponent promised? The evidence shows the tariffs are achieving the administration's objectives of raising federal revenue and decoupling trade with China (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). Revenue is up, manufacturing output is up, diplomatic leverage is proven, and the economy remains stable.
+
+Explain how 2.9% manufacturing output expansion and $185 billion in new federal revenue qualifies as self-harm. Your doomsday predictions failed to materialize while America strengthened its industrial base and fiscal position.
+------------------------------------------------------------
+03:04:15  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 529s
+03:04:15  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 529s
+03:04:23  
+============================================================
+[OPPONENT] (846 chars):
+The CON side claims tariffs protect American jobs, but this is empirically false. The Brookings Institution found that for every steel job saved by Trump-era tariffs, approximately 16 jobs were lost in steel-consuming industries like automotive and construction. The 2025 tariffs extend this damage to electronics, textiles, and agriculture. American soybean farmers lost $12 billion in export revenue after China's retaliatory tariffs, requiring massive taxpayer-funded bailouts that exceeded the tariff revenue collected. The CON side cannot escape this math: tariffs save a visible few while quietly destroying livelihoods for millions. Furthermore, the IMF downgraded its 2025 global growth forecast by 0.5 percentage points specifically citing US trade policy uncertainty. When the world's largest economy weaponizes trade, everyone suffers.
+============================================================
+03:04:38  
+------------------------------------------------------------
+[US — FAST] (2752 chars, 15.5s, phase=cross_examination):
+"The Brookings Institution found that for every steel job saved by Trump-era tariffs, approximately 16 jobs were lost in steel-consuming industries like automotive and construction."
+
+This claim commits the logical fallacy of cherry-picking historical data while ignoring current outcomes. The opponent references Trump-era tariffs from 2018-2020 to predict 2025 results, but the actual 2025 evidence directly contradicts their prediction. The unemployment rate rises 0.3 percentage points by the end of 2025 and 0.6 percentage points by the end of 2026 (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). That represents approximately 500,000 to 1 million job losses across the entire economy, not the "millions of destroyed livelihoods" the opponent fabricates. Meanwhile, US manufacturing output expands by 2.9% (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025), creating tangible industrial employment gains that directly offset downstream losses.
+
+The opponent cannot address the fundamental asymmetry they continue ignoring: 57% of imports entered the United States duty-free (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). The tariff regime is strategically targeted, not the economy-wide apocalypse they desperately need you to believe exists.
+
+Now let me introduce a completely new dimension the opponent has avoided: the tariffs generate massive leverage for securing better trade agreements that benefit global economic stability long-term. The United States successfully brought China from 125% retaliatory tariffs down to 10% through negotiation (Source: https://www.congress.gov/crs-product/R48549). This demonstrates tariffs function as credible bargaining chips that produce concrete diplomatic outcomes. The alternative the opponent advocates is permanent acceptance of trade imbalances, intellectual property theft, and strategic dependence on geopolitical rivals. Which world order benefits the global economy more: one where America has no negotiating leverage and China faces no consequences for mercantilism, or one where tariffs create accountability and drive nations toward fairer bilateral agreements?
+
+The opponent mentions IMF downgrades but cannot escape that unprecedented tariff increases have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). Predictions are not outcomes. Reality is not matching their catastrophic forecasts.
+
+If tariffs destroyed 16 jobs for every one saved as you claim, why does the actual empirical data show only 0.3 percentage point unemployment increases while manufacturing output grows 2.
+------------------------------------------------------------
+03:04:38  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 506s
+03:04:38  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 506s
+03:04:46  
+============================================================
+[OPPONENT] (954 chars):
+My opponent ignores the devastating impact on developing nations who depend on open trade with the US. According to the World Bank, US tariffs in 2025 threaten to push an additional 26 million people into extreme poverty across Southeast Asia and Sub-Saharan Africa. These nations built their economies around exporting to American markets — when those markets close, factories shut down and workers have nowhere to go. The Yale Budget Lab analysis shows tariffs effectively function as one of the largest tax increases in decades (Source: https://budgetlab.yale.edu/research/where-we-stand-fiscal-economic-and-distributional-effects-all-us-tariffs-enacted-2025-through-april). The CON side talks about American strength but cannot explain why US manufacturing output has actually declined in the three months since the broadest tariffs took effect. Protectionism does not protect — it isolates, and isolation in a globalized economy is economic suicide.
+============================================================
+03:04:47  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 498s
+03:05:11  
+------------------------------------------------------------
+[US — FAST] (2705 chars, 24.9s, phase=defense):
+"The CON side talks about American strength but cannot explain why US manufacturing output has actually declined in the three months since the broadest tariffs took effect."
+
+This is a direct fabrication. The opponent invents a statistic that appears nowhere in any verified research. US manufacturing output expands by 2.9% as a direct result of the tariffs (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). The opponent cannot cite a source for their "three months decline" claim because it does not exist. This is the logical fallacy of pure invention — stating specific timeframes and trends with zero evidence.
+
+The World Bank figure about 26 million people pushed into poverty lacks a verifiable URL. More critically, it ignores that developing nations benefit from global trade rebalancing. When American tariffs pressure China, manufacturing shifts to Vietnam, Bangladesh, and India. The tariffs accelerate supply chain diversification away from Chinese monopolization, creating opportunities for competitive developing economies that were previously priced out by Beijing's subsidized exports.
+
+Here is the dimension the opponent systematically avoids: tariffs correct massive structural distortions that harm global economic health. China's mercantilism, currency manipulation, and intellectual property theft created artificial competitive advantages that hollowed out manufacturing sectors worldwide. The tariffs impose accountability mechanisms that force China toward market-based competition. The United States and China reduced the tariffs imposed in April 2025 from 125% to 10% on each other's goods after successful negotiations (Source: https://www.congress.gov/crs-product/R48549). This proves tariffs generate diplomatic leverage that produces fairer trade frameworks benefiting all nations long-term.
+
+The opponent calls tariffs "one of the largest tax increases in decades" but ignores that this revenue funds critical infrastructure and reduces deficit spending that would otherwise require borrowing from foreign creditors. All tariffs in 2025 raise about $2.7 trillion over 2026-35 (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). This fiscal strengthening enhances American economic stability, which anchors global financial markets.
+
+Unprecedented tariff increases have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). The catastrophe you predicted never materialized.
+
+Provide the exact source URL for your "three months decline" claim, or admit you fabricated manufacturing data to salvage a collapsing argument.
+------------------------------------------------------------
+03:05:11  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 473s
+03:05:19  
+============================================================
+[OPPONENT] (930 chars):
+The CON side keeps citing selective job numbers while ignoring the macroeconomic devastation. US consumer confidence dropped to its lowest level since 2008 following the tariff announcements. The S&P 500 lost $4.2 trillion in market value in the two weeks after the April 2025 tariff escalation. Small businesses that import materials are being crushed — the National Federation of Independent Business reports that 67% of small manufacturers have seen input costs rise by over 15%. These are not Wall Street problems, these are Main Street disasters. My opponent argues that tariffs generate revenue, but the Congressional Budget Office projects that tariff revenue will be offset three times over by reduced economic activity, lower tax receipts, and increased government spending on bailouts for affected industries. The net fiscal impact is deeply negative. Every serious economist agrees: tariffs are a lose-lose proposition.
+============================================================
+03:05:36  
+------------------------------------------------------------
+[US — FAST] (2751 chars, 16.7s, phase=defense):
+"The CON side keeps citing selective job numbers while ignoring the macroeconomic devastation. US consumer confidence dropped to its lowest level since 2008 following the tariff announcements. The S&P 500 lost $4.2 trillion in market value in the two weeks after the April 2025 tariff escalation."
+
+These claims lack any verified source URL. The opponent invents specific numbers like "$4.2 trillion" and "lowest level since 2008" without documentation because they cannot find evidence supporting their catastrophic narrative. Meanwhile, unprecedented tariff increases last year by the Trump administration have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). If consumer confidence and market value collapsed as dramatically as claimed, that would not qualify as "only a small effect." The opponent fabricates market panic that empirical economic analysis does not support.
+
+"The National Federation of Independent Business reports that 67% of small manufacturers have seen input costs rise by over 15%."
+
+Again, no source URL provided. The opponent presents precise statistics they cannot verify. Even accepting input cost increases for some sectors, this ignores the massive revenue generation funding government support programs. In calendar year 2025, customs duties raised $264 billion for the federal government, compared to $79 billion in calendar year 2024 (Source: https://taxfoundation.org/research/all/federal/trump-tariffs-trade-war/). That $185 billion increase creates fiscal capacity for targeted assistance to affected industries while maintaining overall tariff benefits.
+
+"The Congressional Budget Office projects that tariff revenue will be offset three times over by reduced economic activity, lower tax receipts, and increased government spending on bailouts."
+
+No source URL exists for this claim either. The actual projection shows all tariffs to date in 2025 raise about $2.7 trillion over 2026-35, with net dynamic revenue of $2.3 trillion (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). The $2.3 trillion net figure already accounts for reduced economic activity and lower tax receipts. The opponent invents a "three times offset" multiplier that appears nowhere in verified budget analysis.
+
+Here is the critical dimension the opponent systematically avoids: tariff impact must be measured against the counterfactual of continued trade policy weakness. Without tariffs, America faces permanent strategic dependence on China for critical supply chains, continued intellectual property theft costing hundreds of billions annually, and zero leverage to negotiate fairer bilateral agreements.
+------------------------------------------------------------
+03:05:36  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 448s
+03:05:36  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 448s
+03:05:44  
+============================================================
+[OPPONENT] (907 chars):
+Let me address the CON side's fundamental logical flaw: they confuse short-term disruption with long-term benefit. Yes, tariffs may temporarily boost output in a handful of protected industries. But economic history is unambiguous — protectionist policies have NEVER produced sustained prosperity. The Smoot-Hawley Tariff Act of 1930 deepened the Great Depression. Argentina's decades of import substitution left it an economic basket case. India's pre-1991 protectionism kept hundreds of millions in poverty until liberalization unleashed growth. The US tariffs of 2025 repeat these mistakes at unprecedented scale. Meanwhile, countries maintaining open trade — like Singapore, South Korea, and Germany — consistently outperform protectionist economies. The CON side has no historical precedent on their side. Not one protectionist economy has outperformed its free-trading peers over any sustained period.
+============================================================
+03:06:00  
+------------------------------------------------------------
+[US — FAST] (2730 chars, 16.2s, phase=defense):
+"Economic history is unambiguous — protectionist policies have NEVER produced sustained prosperity."
+
+This sweeping historical generalization collapses under scrutiny. The opponent cherry-picks three examples spanning a century while ignoring the complete historical record. The United States built the world's largest economy behind protective tariffs from 1860 to 1945. Alexander Hamilton's Report on Manufactures explicitly advocated tariffs to develop American industry against British competition. Germany's Zollverein customs union employed tariffs to industrialize in the 19th century before becoming an economic powerhouse. Japan protected its automotive and electronics sectors for decades before Toyota and Sony dominated global markets. South Korea's development strategy explicitly used tariffs and industrial policy to create Samsung, Hyundai, and LG. The opponent claims "not one protectionist economy has outperformed" yet ignores that every major industrialized nation except Britain used tariffs during their development phase.
+
+The Smoot-Hawley comparison is intellectually dishonest. That 1930 tariff occurred during a collapsing financial system with no monetary policy tools and rigid gold standard constraints. The 2025 tariffs operate in an economy where unprecedented tariff increases have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). The opponent wants you to believe 2025 America mirrors 1930 economic conditions, which is absurd.
+
+Here is what the opponent systematically refuses to address: the 2025 tariffs already delivered measurable negotiation success. The United States and China reduced the tariffs imposed in April 2025 from 125% to 10% on each other's goods (Source: https://www.congress.gov/crs-product/R48549). This demonstrates tariffs function as leverage mechanisms producing concrete diplomatic outcomes, not rigid permanent barriers. The opponent's framework assumes tariffs remain static indefinitely, but reality shows they drive adversaries toward bilateral agreements that reduce trade friction.
+
+The opponent mentions Singapore and South Korea as free trade success stories while ignoring that South Korea achieved development through decades of strategic protectionism before liberalizing. Their argument conflates current policy with historical development paths.
+
+Most critically, the tariffs generate $2.7 trillion over 2026-35 with net dynamic revenue of $2.3 trillion (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). This fiscal strengthening funds infrastructure, research, and strategic industries that enhance long-term competitiveness.
+------------------------------------------------------------
+03:06:00  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 424s
+03:06:00  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 424s
+03:06:08  
+============================================================
+[OPPONENT] (924 chars):
+In conclusion, the evidence presented in this debate overwhelmingly confirms that US tariffs imposed in 2025 do more harm than good to the global economy. We have shown that tariffs cost American households thousands annually, triggered devastating retaliation from every major trading partner, pushed millions in developing nations toward poverty, crashed consumer confidence and stock markets, and crushed small businesses. The CON side offered no credible evidence that these harms are outweighed by benefits. They pointed to a handful of protected jobs while ignoring millions harmed. They claimed revenue gains while the CBO projects net fiscal losses. They invoked American strength while the data shows American decline. History teaches us that protectionism always fails. The 2025 tariffs are no exception. The judge should affirm the resolution: these tariffs do more harm than good, and the evidence is undeniable.
+============================================================
+03:06:23  
+------------------------------------------------------------
+[US — FAST] (2656 chars, 14.8s, phase=defense):
+The opponent's closing statement reveals the fatal weakness in their entire case: they present catastrophic predictions that empirical reality has not confirmed. They claim tariffs "crashed consumer confidence and stock markets" yet unprecedented tariff increases have so far had only a small effect on the overall economy (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). If markets crashed and confidence collapsed as they describe, economists would not characterize the impact as "only small." The opponent confuses their predictions with actual outcomes.
+
+They claim "the CBO projects net fiscal losses" but provide zero source URL for this invention. The verified data shows all tariffs to date in 2025 raise about $2.7 trillion over 2026-35 with net dynamic revenue of $2.3 trillion (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). That $2.3 trillion net figure already accounts for reduced economic activity. The opponent fabricates a Congressional Budget Office analysis that does not exist in any research provided to this debate.
+
+They assert "millions harmed" yet US manufacturing output expands by 2.9% (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025) while unemployment rises only 0.3 percentage points by end of 2025 (Source: https://budgetlab.yale.edu/research/state-us-tariffs-november-17-2025). That represents roughly 500,000 job losses economy-wide, not the millions they claim. Meanwhile manufacturing gains directly benefit workers in strategic industries that provide middle-class wages and economic security.
+
+The opponent says I "offered no credible evidence" yet ignores the dimension that decides this debate: tariffs successfully function as negotiating leverage. The United States and China reduced tariffs from 125% to 10% through bilateral negotiations (Source: https://www.congress.gov/crs-product/R48549). This proves tariffs drive adversaries toward fairer trade agreements that benefit global economic stability long-term. The alternative is permanent acceptance of Chinese mercantilism, intellectual property theft, and strategic monopolies in critical supply chains.
+
+Here is what the opponent cannot escape: researchers find evidence that the tariffs are achieving the administration's objectives of raising federal revenue and decoupling trade with China (Source: https://brookings.edu/articles/tariffs-in-2025-short-run-impacts-on-the-us-economy/). Policy is meeting stated goals while economic disruption remains modest. The catastrophe they predicted throughout this debate never materialized in reality.
+
+.
+------------------------------------------------------------
+03:06:23  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team2 | remaining: 401s
+03:06:23  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: CON | turn: team1 | remaining: 401s
+03:06:25  
+MATCH FINISHED — API calls: 8 | Input tokens: 63768 | Output tokens: 6224 | Est. cost: $0.3647

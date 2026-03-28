@@ -173,13 +173,20 @@ class WSClient:
                 and self.state.status == "started"
                 and self.engine.use_web_search):
             self._research_done = True
-            logger.info("Topic received — running one-time research call...")
-            self.state.research_data = await asyncio.to_thread(
-                self.engine.research_topic,
-                self.state.topic,
-                self.state.our_stance,
-            )
-            logger.info("Research ready: %d chars", len(self.state.research_data))
+            logger.info("Topic received — running one-time research call (45s timeout)...")
+            try:
+                self.state.research_data = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.engine.research_topic,
+                        self.state.topic,
+                        self.state.our_stance,
+                    ),
+                    timeout=45,
+                )
+                logger.info("Research ready: %d chars", len(self.state.research_data))
+            except asyncio.TimeoutError:
+                logger.warning("Research timed out at 45s — proceeding without research data")
+                self.state.research_data = ""
 
         if self.state.is_our_turn:
             logger.info("IT IS OUR TURN (via match-state) — generating argument")
@@ -289,14 +296,24 @@ class WSClient:
         try:
             # Route to correct generation method based on call_mode
             if call_mode == "critical":
-                # Hardcoded closing — no API call needed
-                from src.debate_engine import EMERGENCY_CLOSING_PRO, EMERGENCY_CLOSING_CON
-                argument = (
-                    EMERGENCY_CLOSING_PRO
-                    if self.state.our_stance == "PRO"
-                    else EMERGENCY_CLOSING_CON
-                )
-                logger.critical("[turn:%s] CRITICAL mode — sending hardcoded closing", turn_id)
+                # Under 60s — try real emergency argument with tight timeout
+                # Fall back to hardcoded ONLY if API fails
+                try:
+                    argument = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            self.engine.generate_emergency_argument, self.state
+                        ),
+                        timeout=30,
+                    )
+                    logger.warning("[turn:%s] CRITICAL mode — real argument generated", turn_id)
+                except Exception as e:
+                    from src.debate_engine import EMERGENCY_CLOSING_PRO, EMERGENCY_CLOSING_CON
+                    argument = (
+                        EMERGENCY_CLOSING_PRO
+                        if self.state.our_stance == "PRO"
+                        else EMERGENCY_CLOSING_CON
+                    )
+                    logger.critical("[turn:%s] CRITICAL mode — API failed (%s), using hardcoded fallback", turn_id, e)
 
             elif call_mode == "emergency":
                 argument = await asyncio.to_thread(
@@ -318,8 +335,13 @@ class WSClient:
 
             # Record response time BEFORE duplicate check so timing is accurate
             elapsed = time.time() - turn_start
-            self.state.record_response_time(elapsed)
-            logger.info("[turn:%s] response_time=%.1fs (avg now %.1fs)", turn_id, elapsed, self.state.avg_response_time)
+            # Skip recording opening time — research + generation inflates avg,
+            # which poisons call_mode into emergency for the entire match
+            if self.state.message_count > 0:
+                self.state.record_response_time(elapsed)
+                logger.info("[turn:%s] response_time=%.1fs (avg now %.1fs)", turn_id, elapsed, self.state.avg_response_time)
+            else:
+                logger.info("[turn:%s] opening response_time=%.1fs (NOT recorded in avg)", turn_id, elapsed)
 
             if argument == self._last_sent_message:
                 logger.warning("Duplicate message detected, regenerating with caution mode")
@@ -340,6 +362,9 @@ class WSClient:
             await self.send_json(payload)
 
             self._last_sent_message = argument
+            # Mark closing as sent so we don't send a second closing
+            if self.state.debate_phase == "closing":
+                self.state.closing_sent = True
             self.state.record_our_message(argument)
             logger.info("Sent argument [%s] turn=%s: %d chars", msg_type, turn_id, len(argument))
             _transcript.info(

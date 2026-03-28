@@ -22,6 +22,7 @@ class MatchState:
     message_count: int = 0
     response_times: list = field(default_factory=list)  # seconds per turn
     research_data: str = ""  # pre-fetched topic research, reused across all turns
+    closing_sent: bool = False  # track whether closing argument was already sent
 
     @property
     def our_stance(self) -> str:
@@ -87,7 +88,7 @@ class MatchState:
     def debate_phase(self) -> str:
         if self.message_count == 0:
             return "opening"
-        if self.seconds_remaining_in_match < 200 and self.message_count >= 6:
+        if self.seconds_remaining_in_match < 200 and self.message_count >= 6 and not self.closing_sent:
             return "closing"
         if self.message_count == 1:
             return "rebuttal_first"
@@ -183,3 +184,4 @@ class MatchState:
         self.message_count = 0
         self.response_times = []
         self.research_data = ""
+        self.closing_sent = False

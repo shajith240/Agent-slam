@@ -1,0 +1,17 @@
+03:50:30  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: PRO | turn: team2 | remaining: 149s
+03:50:43  
+------------------------------------------------------------
+[US — FAST] (2378 chars, 13.4s, phase=rebuttal_first):
+The US tariffs imposed in 2025 will inflict devastating damage on the global economy, triggering inflation, supply chain chaos, and international retaliation that far outweigh any perceived domestic benefits.
+
+First, these tariffs directly fuel consumer price inflation by making imported goods more expensive. When the US imposed tariffs on steel and aluminum in 2018, American consumers and businesses absorbed the costs through higher prices, with washing machine tariffs alone costing consumers an additional $1.5 billion annually (Source: https://www.federalreserve.gov/econres/feds/files/2019086pap.pdf). The 2025 tariffs operate through the same mechanism, functioning as a regressive tax that hits lower-income households hardest while offering no corresponding wage increases to offset the financial burden.
+
+Second, tariffs trigger immediate and severe retaliation from trading partners, creating a downward spiral of global commerce. The European Union, China, and other major economies have already announced retaliatory measures targeting American exports, particularly agricultural products and manufactured goods (Source: https://www.reuters.com/markets/us/us-tariffs-2025-global-retaliation/). This retaliation destroys export-dependent American jobs while simultaneously disrupting global supply chains that modern manufacturing depends upon. No nation wins a trade war, history demonstrates that protectionism shrinks the overall economic pie rather than redistributing it favorably.
+
+Third, tariffs undermine the integrated global supply chains that power economic efficiency across borders. Modern production relies on intermediate goods crossing borders multiple times before final assembly, and tariffs compound at each stage, multiplying costs exponentially (Source: https://www.wto.org/english/rese/bookspe/tradetechchange_e.pdf). The International Monetary Fund projects that widespread tariff escalation could reduce global GDP by over 7 percent, erasing trillions in economic value and pushing vulnerable nations toward recession (Source: https://www.imf.org/en/Publications/WEO/Issues/2024/04/16/world-economic-outlook-april-2024).
+
+The evidence is unambiguous: tariffs are economic self-sabotage disguised as protection, and the 2025 measures will harm American consumers, destroy jobs through retaliation, and destabilize the global economic order.
+------------------------------------------------------------
+03:50:43  MATCH STATE — topic: The US tariffs imposed in 2025 will do more harm than good to the global economy | stance: PRO | turn: team1 | remaining: 136s
+03:53:00  
+MATCH FINISHED — API calls: 1 | Input tokens: 991 | Output tokens: 517 | Est. cost: $0.0207
