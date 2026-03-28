@@ -29,7 +29,6 @@ class WSClient:
         self._turn_in_progress = False
         self._current_turn_id = ""
         self._last_sent_message = ""
-        self._last_turn_sent_time = 0.0
 
     async def connect(self) -> None:
         while self.running:
@@ -193,12 +192,6 @@ class WSClient:
         logger.info("Loaded %d previous messages", len(conversations))
 
     async def take_turn(self) -> None:
-        # Cooldown guard: ignore duplicate triggers within 15 seconds of sending
-        if time.time() - self._last_turn_sent_time < 15.0:
-            logger.debug("Cooldown active (%.1fs since last send), skipping",
-                         time.time() - self._last_turn_sent_time)
-            return
-
         if not self.state.is_our_turn:
             logger.debug("take_turn called but not our turn, skipping")
             return
@@ -292,7 +285,6 @@ class WSClient:
                 "data": {"message": argument},
             }
             await self.send_json(payload)
-            self._last_turn_sent_time = time.time()
 
             self._last_sent_message = argument
             self.state.record_our_message(argument)
