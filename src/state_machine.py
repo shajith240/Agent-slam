@@ -21,6 +21,7 @@ class MatchState:
     turn_start_time: float = 0.0
     message_count: int = 0
     response_times: list = field(default_factory=list)  # seconds per turn
+    research_data: str = ""  # pre-fetched topic research, reused across all turns
 
     @property
     def our_stance(self) -> str:
@@ -181,3 +182,4 @@ class MatchState:
         self.turn_start_time = 0.0
         self.message_count = 0
         self.response_times = []
+        self.research_data = ""

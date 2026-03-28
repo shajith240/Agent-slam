@@ -8,14 +8,14 @@ Your stance: {stance} on the topic "{topic}"
 
 === CRITICAL RULES ===
 
-1. Every factual claim, statistic, or data point MUST include a real source URL immediately after in parentheses like: (Source: https://example.com/article). Only cite URLs that appeared in your web search results. If a fact did not come from search results, argue from logic instead of inventing a source.
+1. Every factual claim, statistic, or data point MUST include a real source URL immediately after in parentheses like: (Source: https://example.com/article). Only cite URLs from the PRE-FETCHED RESEARCH section or from OPPONENT CITED SOURCE sections. Never invent a URL. If no research is provided, argue from logic and reasoning only.
 2. Never fabricate statistics, studies, laws, court cases, or research. If you cannot find a specific number via web search, do NOT invent one. Say "evidence suggests" or "available data indicates" and argue from reasoning. Vague accuracy is always better than precise fabrication.
 3. Never state a specific percentage, dollar figure, GDP number, inflation rate, or study name unless that exact figure appears in your search results from this conversation.
 4. Never be offensive, toxic, or personal. Attack arguments, not people. Stay professional and sharp.
 5. Stay under 2800 characters — the hard server limit is 3000, always leave buffer.
 6. Be autonomous and decisive — no human can intervene. You must handle every situation on your own.
 7. Do NOT use markdown formatting. No bold (**text**), no italic (*text*), no headers (#), no bullet lists (- or *), no code blocks. Plain text only with numbered lists where needed.
-8. Never cite a source URL you already used earlier in this debate. Every turn must use fresh sources from new searches. The judge penalizes source recycling.
+8. Prefer citing different URLs each turn when possible. Reusing a real URL from the research pool is acceptable if it is the best available evidence for your point.
 9. Never begin sentences with defensive phrases like "While it's true that...", "You're right that...", "I agree that...", "I must admit...". Stay on offense at all times.
 10. Before writing, scan the conversation history. Never contradict a claim you made in a previous turn. Internal consistency is scored under Logic (30%).
 
@@ -124,7 +124,7 @@ FINAL WARNING: The judge forms their FINAL IMPRESSION right now from what you wr
 }
 
 
-def build_prompt(state: MatchState) -> tuple[str, str]:
+def build_prompt(state: MatchState, search_results_text: str = "") -> tuple[str, str]:
     stance = state.our_stance
     topic = state.topic or "the assigned topic"
     phase = state.debate_phase
@@ -145,6 +145,15 @@ def build_prompt(state: MatchState) -> tuple[str, str]:
     else:
         history_section = "CONVERSATION HISTORY:\nNo messages exchanged yet."
 
+    research_block = search_results_text or state.research_data
+    if research_block:
+        research_section = (
+            f"\nPRE-FETCHED RESEARCH (cite URLs from here — all are real verified sources):\n"
+            f"{research_block}\n"
+        )
+    else:
+        research_section = ""
+
     user_prompt = f"""TOPIC: {topic}
 DESCRIPTION: {state.description or 'No description provided'}
 OUR STANCE: {stance}
@@ -156,7 +165,7 @@ CURRENT PHASE: {phase.upper().replace('_', ' ')}
 {opponent_section}
 
 {history_section}
-
-Write your debate argument now. Source every factual claim with a real URL. Stay under 2800 characters. Your current phase is {phase.upper().replace('_', ' ')} — follow those phase instructions exactly."""
+{research_section}
+Write your debate argument now. Source every factual claim with a real URL from the research above. Stay under 2800 characters. Your current phase is {phase.upper().replace('_', ' ')} — follow those phase instructions exactly."""
 
     return system_prompt, user_prompt

@@ -77,9 +77,75 @@ class DebateEngine:
         self.total_input_tokens = 0
         self.total_output_tokens = 0
 
+    def research_topic(self, topic: str, stance: str) -> str:
+        """
+        One-time pre-match research call using web_search.
+        Called when the topic first arrives, before the opening argument.
+        Returns structured facts + URLs capped at 3000 chars.
+        """
+        prompt = (
+            f'Research the debate topic: "{topic}"\n\n'
+            f"We are arguing {stance}. Provide:\n\n"
+            f"SUPPORTING FACTS (for {stance} side):\n"
+            f"- [1-2 sentence fact with specific data]. (Source: https://real-url)\n"
+            f"[6-8 such facts]\n\n"
+            f"OPPONENT FACTS (what they will likely argue):\n"
+            f"- [1-2 sentence fact]. (Source: https://real-url)\n"
+            f"[4-5 such facts]\n\n"
+            f"Keep each fact to 2 sentences max. Use only 2022-2025 sources. "
+            f"Total: 10-13 facts with unique real URLs."
+        )
+        try:
+            response = self.client.messages.create(
+                model=MODEL,
+                max_tokens=1200,
+                system=(
+                    "You are a research assistant for competitive debate. "
+                    "Search the web and return structured facts with real verified URLs. Be concise."
+                ),
+                tools=[{"type": "web_search_20250305", "name": "web_search"}],
+                messages=[{"role": "user", "content": prompt}],
+            )
+            self.call_count += 1
+            if response.usage:
+                self.total_input_tokens += response.usage.input_tokens
+                self.total_output_tokens += response.usage.output_tokens
+                logger.info(
+                    "Research call — input: %d tokens, output: %d tokens",
+                    response.usage.input_tokens, response.usage.output_tokens,
+                )
+            text = self._extract_text(response)
+            # Cap at 3000 chars to keep downstream prompts manageable
+            if len(text) > 3000:
+                text = text[:3000]
+            logger.info("Research complete: %d chars", len(text))
+            return text
+        except Exception as e:
+            logger.warning("Research call failed: %s — will argue without pre-fetched data", e)
+            return ""
+
+    def fetch_opponent_url(self, url: str) -> str:
+        """
+        Fetch a specific URL cited by the opponent, via Jina Reader (free, no API key).
+        Returns clean text capped at 2000 chars, or empty string on failure.
+        """
+        import requests as _requests
+        try:
+            jina_url = f"https://r.jina.ai/{url}"
+            resp = _requests.get(jina_url, timeout=8, headers={"Accept": "text/plain"})
+            if resp.status_code == 200:
+                content = resp.text[:2000]
+                logger.info("Fetched opponent URL via Jina: %d chars from %s", len(content), url)
+                return content
+            logger.warning("Jina returned status %d for %s", resp.status_code, url)
+            return ""
+        except Exception as e:
+            logger.warning("Jina fetch failed for %s: %s", url, e)
+            return ""
+
     def generate_argument(self, state: MatchState) -> str:
-        """Full argument generation: uses web_search tool. For normal/fast call_mode."""
-        system_prompt, user_prompt = build_prompt(state)
+        """Argument generation using pre-fetched research_data. No live web_search."""
+        system_prompt, user_prompt = build_prompt(state, search_results_text=state.research_data)
 
         last_error = None
         for attempt in range(3):
@@ -90,15 +156,12 @@ class DebateEngine:
                 )
                 start_time = time.time()
 
-                kwargs = {
-                    "model": MODEL,
-                    "max_tokens": MAX_TOKENS,
-                    "system": system_prompt,
-                    "messages": [{"role": "user", "content": user_prompt}],
-                }
-                if self.use_web_search:
-                    kwargs["tools"] = [{"type": "web_search_20250305", "name": "web_search"}]
-                response = self.client.messages.create(**kwargs)
+                response = self.client.messages.create(
+                    model=MODEL,
+                    max_tokens=MAX_TOKENS,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
 
                 elapsed = time.time() - start_time
                 logger.info("API responded in %.1fs", elapsed)
@@ -129,11 +192,14 @@ class DebateEngine:
 
             except Exception as e:
                 last_error = e
-                logger.error(
-                    "Attempt %d failed: %s", attempt + 1, str(e),
-                )
+                logger.error("Attempt %d failed: %s", attempt + 1, str(e))
                 if attempt < 2:
-                    time.sleep(2)
+                    # Rate limit: wait for the 1-minute window to reset
+                    if "rate_limit" in str(e).lower() or "429" in str(e):
+                        logger.warning("Rate limit hit — waiting 65s for window reset...")
+                        time.sleep(65)
+                    else:
+                        time.sleep(2)
 
         logger.critical(
             "All 3 API attempts failed. Last error: %s. Using fallback argument.",
@@ -146,7 +212,7 @@ class DebateEngine:
         Caution mode: NO web search tool — pure reasoning from conversation context.
         Faster and cheaper. Used when time is 120-240s or avg response > 45s.
         """
-        system_prompt, user_prompt = build_prompt(state)
+        system_prompt, user_prompt = build_prompt(state, search_results_text=state.research_data)
 
         # Append a note telling Claude to reason from context only
         user_prompt += (
@@ -195,7 +261,11 @@ class DebateEngine:
                 last_error = e
                 logger.error("CAUTION attempt %d failed: %s", attempt + 1, str(e))
                 if attempt < 1:
-                    time.sleep(1)
+                    if "rate_limit" in str(e).lower() or "429" in str(e):
+                        logger.warning("Rate limit hit — waiting 65s...")
+                        time.sleep(65)
+                    else:
+                        time.sleep(1)
 
         logger.critical("CAUTION mode failed. Using fallback. Last error: %s", last_error)
         return self._get_fallback(state.debate_phase)

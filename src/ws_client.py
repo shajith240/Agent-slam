@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 import time
 import uuid
 
@@ -147,6 +148,20 @@ class WSClient:
             "State updated — turn: %s, status: %s, topic: %s",
             self.state.turn, self.state.status, self.state.topic,
         )
+
+        # One-time research: fires when topic first arrives at match start
+        if (self.state.topic
+                and not self.state.research_data
+                and self.state.status == "started"
+                and self.engine.use_web_search):
+            logger.info("Topic received — running one-time research call...")
+            self.state.research_data = await asyncio.to_thread(
+                self.engine.research_topic,
+                self.state.topic,
+                self.state.our_stance,
+            )
+            logger.info("Research ready: %d chars", len(self.state.research_data))
+
         if self.state.is_our_turn:
             logger.info("IT IS OUR TURN (via match-state) — generating argument")
             await self.take_turn()
@@ -166,6 +181,20 @@ class WSClient:
         if team != self.state.our_team:
             self.state.record_opponent_message(team, message, timestamp)
             logger.info("Opponent argued: %s...", message[:100])
+
+            # If opponent cited a specific URL, fetch it via Jina so we can rebut directly
+            if self.engine.use_web_search:
+                urls = re.findall(r'https?://[^\s\)\"\'>]+', message)
+                if urls:
+                    url = urls[0].rstrip('.,;')
+                    logger.info("Opponent cited URL — fetching via Jina: %s", url)
+                    fetched = await asyncio.to_thread(self.engine.fetch_opponent_url, url)
+                    if fetched:
+                        self.state.research_data += (
+                            f"\n\nOPPONENT CITED THIS SOURCE (read it and use it against them):\n"
+                            f"URL: {url}\n{fetched}"
+                        )
+                        logger.info("Appended opponent source (%d chars) to research_data", len(fetched))
 
             if self.state.status == "started":
                 self.state.turn = self.state.our_team
