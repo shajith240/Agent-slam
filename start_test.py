@@ -22,7 +22,12 @@ import urllib.parse
 import webbrowser
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).parent
+
+# Load .env so we can read TEAM_NAME
+load_dotenv(ROOT / ".env")
 
 
 def parse_flag(args: list[str], flag: str) -> str:
@@ -36,6 +41,9 @@ def parse_flag(args: list[str], flag: str) -> str:
 def main():
     # Collect any extra args to forward to agent.py (--topic, --pros, --cons)
     extra_args = sys.argv[1:]
+
+    # Read TEAM_NAME from .env — this determines which team the bot is
+    team_name = os.getenv("TEAM_NAME", "team1")
 
     procs: list[subprocess.Popen] = []
 
@@ -73,19 +81,19 @@ def main():
         print("[start_test] ERROR: interactive_server.py failed to start.")
         sys.exit(1)
 
-    # ── 2. Open dashboard in browser with topic/stance pre-filled ────────────
+    # ── 2. Open dashboard in browser ──────────────────────────────────────────
     dashboard = ROOT / "tests" / "interactive_dashboard.html"
     topic = parse_flag(extra_args, "--topic")
-    pros  = parse_flag(extra_args, "--pros")
-    # Build query string so the dashboard can pre-fill its form
-    params = {}
+
+    # Pass botTeam so the dashboard selects the correct stance
+    # botTeam MUST match TEAM_NAME from .env, otherwise the server
+    # will send turns to the wrong team and the bot will ignore them.
+    params = {"botTeam": team_name, "autoStart": "true"}
     if topic:
         params["topic"] = topic
-    if pros:
-        params["pros"] = pros
-    uri = dashboard.as_uri()
-    if params:
-        uri += "?" + urllib.parse.urlencode(params)
+
+    uri = dashboard.as_uri() + "?" + urllib.parse.urlencode(params)
+    print(f"[start_test] Bot team: {team_name}")
     print(f"[start_test] Opening dashboard: {uri}")
     webbrowser.open(uri)
 

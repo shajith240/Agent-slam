@@ -441,6 +441,7 @@
 // ============================================================
 
 const WS_URL = 'ws://localhost:8766';
+const autoStart = new URLSearchParams(window.location.search).get('autoStart') === 'true';
 let ws = null;
 let matchStarted = false;
 let finishTime = 0;
@@ -494,7 +495,14 @@ function handleServerMessage(msg) {
     const cls = text.startsWith('ERROR') ? 'error' : 'info';
     log(text, cls);
 
-    if (text.includes('Bot connected')) setBotDot(true);
+    if (text.includes('Bot connected') || data.botConnected) {
+      setBotDot(true);
+      // Auto-start match if launched from start_test.py
+      if (autoStart && !matchStarted) {
+        log('Auto-starting match (start_test.py mode)...', 'success');
+        setTimeout(startMatch, 500);
+      }
+    }
     if (text.includes('Bot disconnected')) { setBotDot(false); setWaitingForBot(false); }
     if (data.waitingForOpponent) setWaitingForOpponent();
     if (data.waitingForBot)      setWaitingForBot(true);
@@ -843,20 +851,15 @@ window.addEventListener('load', () => {
     document.getElementById('cfg-topic').value = topic;
   }
 
-  // --pros team1  → bot is PRO (team1 radio)
-  // --pros Perplexity → bot is CON (team2 radio)
-  const pros = params.get('pros');
-  if (pros) {
-    const botIsPro = pros === 'team1';
-    const proRadio = document.querySelector('input[name=stance][value=team1]');
-    const conRadio = document.querySelector('input[name=stance][value=team2]');
-    if (botIsPro) {
-      proRadio.checked = true;
-    } else {
-      conRadio.checked = true;
+  // botTeam = TEAM_NAME from .env (e.g. "team1" or "team2")
+  // This MUST match so the server sends turns to the right team.
+  const botTeam = params.get('botTeam');
+  if (botTeam) {
+    const radio = document.querySelector('input[name=stance][value=' + botTeam + ']');
+    if (radio) {
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change'));
     }
-    // Trigger the change event so CSS active state updates
-    document.querySelector('input[name=stance]:checked').dispatchEvent(new Event('change'));
   }
 
   connectServer();
