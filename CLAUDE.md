@@ -190,7 +190,7 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 [x] agent.py — written
 [x] monitor/dashboard.html — match monitor UI built
 [x] tests/mock_server.py — local mock competition server built
-[ ] Sandbox tested
+[ ] Interactive test run completed (run tests/interactive_server.py + agent.py)
 [ ] WS credentials received from admin
 [ ] Live match tested
 
@@ -221,7 +221,9 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 - 2026-03-25: ws_client.py uses exponential backoff reconnection with max 30s wait. Reconnect urgency check fires if disconnect time exceeds RECONNECT_WINDOW_SECONDS - 10 to ensure we never hit the 2 minute DQ window. take_turn() has an 85 second hard cutoff guard so we never send a late message that the judge ignores. Every handler is wrapped in try/except so a bad message never kills the listener loop.
 - 2026-03-25: agent.py runs two modes — live (python agent.py) and sandbox (python agent.py --sandbox). Logging writes to both terminal and logs/ folder simultaneously so every match has a full audit trail. Startup checks verify API key and team name before any network connection is attempted so failures are obvious immediately.
 - 2026-03-25: Dashboard is a standalone HTML file connecting to same WS URL as agent. Read-only observer. Dark esports aesthetic with cyan (us) vs pink (opponent) color coding. Persists config in localStorage. Shows live turn indicator, phase tracker, message feed, and API cost stats.
-- 2026-03-25: Mock server simulates full match on ws://localhost:8765. No credentials needed. Plays a pre-scripted debate on AI harm vs benefit topic. Lets us test dashboard and agent without any real server. Agent can also connect to it for integration testing.
+- 2026-03-28: Replaced mock_server.py, test_evaluation.py, test_static.py with interactive test system: tests/interactive_server.py (port 8766) + tests/interactive_dashboard.html. Human plays opponent by pasting ChatGPT responses into dashboard. Zero API cost overhead. Bot runs unchanged.
+- 2026-03-28: Fixed critical bug — MODEL was "claude-sonnet-4-5-20250514" (404 error, bot used fallback text every turn). Fixed to "claude-sonnet-4-5".
+- 2026-03-28: Fixed ws_client.py — generate_argument now runs in asyncio.to_thread (prevents event loop blocking). Simplified broken other_team comparison logic to direct assignment.
 
 ---
 
@@ -235,7 +237,7 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 ---
 
 > Last updated: 2026-03-28
-> Next action: Get sandbox credentials from admin, run sandbox test, freeze code before March 28 18:00
+> Next action: Run interactive test session (python tests/interactive_server.py + python agent.py), then get sandbox credentials from admin
 
 ---
 

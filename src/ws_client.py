@@ -167,16 +167,11 @@ class WSClient:
             logger.info("Opponent argued: %s...", message[:100])
 
             if self.state.status == "started":
-                other_team = (
-                    self.state.team2
-                    if team == self.state.team1
-                    else self.state.team1
-                )
-                self.state.turn = other_team if other_team == self.state.our_team else self.state.our_team
-                if self.state.turn == self.state.our_team:
-                    self.state.turn_start_time = time.time()
-                    logger.info("IT IS OUR TURN (via debate-message) — generating argument")
-                    await self.take_turn()
+                # Opponent just spoke — it is now our turn
+                self.state.turn = self.state.our_team
+                self.state.turn_start_time = time.time()
+                logger.info("IT IS OUR TURN (via debate-message) — generating argument")
+                await self.take_turn()
 
     async def handle_match_resumed(self, data: dict) -> None:
         finish_time = data.get("finishTime")
@@ -222,7 +217,7 @@ class WSClient:
             return
 
         try:
-            argument = self.engine.generate_argument(self.state)
+            argument = await asyncio.to_thread(self.engine.generate_argument, self.state)
 
             if argument == self._last_sent_message:
                 logger.warning("Duplicate message detected, regenerating")

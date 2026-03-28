@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent SLAM — Interactive Test Controller</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #0f0f1a;
+    --bg3: #14142a;
+    --border: #1e1e3a;
+    --cyan: #00f5ff;
+    --cyan-dim: #007a80;
+    --pink: #ff3366;
+    --pink-dim: #80192e;
+    --green: #00ff88;
+    --yellow: #ffd700;
+    --gray: #555577;
+    --text: #c8c8e8;
+    --text-dim: #666688;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 13px; min-height: 100vh; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-title { color: var(--cyan); font-size: 15px; font-weight: bold; letter-spacing: 2px; }
+  .topbar-subtitle { color: var(--gray); font-size: 11px; margin-top: 2px; }
+  .status-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold;
+    letter-spacing: 1px; border: 1px solid;
+  }
+  .status-badge.waiting  { color: var(--gray); border-color: var(--gray); }
+  .status-badge.live     { color: var(--cyan); border-color: var(--cyan); animation: pulse-badge 2s infinite; }
+  .status-badge.finished { color: var(--green); border-color: var(--green); }
+  @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── SETUP PANEL ── */
+  #setup-panel {
+    max-width: 700px; margin: 40px auto; padding: 30px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  }
+  #setup-panel h2 { color: var(--cyan); margin-bottom: 20px; font-size: 16px; letter-spacing: 2px; }
+  .form-row { margin-bottom: 16px; }
+  .form-row label { display: block; color: var(--text-dim); font-size: 11px; margin-bottom: 6px; letter-spacing: 1px; }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-row input:focus, .form-row textarea:focus { border-color: var(--cyan); }
+  .stance-row { display: flex; gap: 16px; }
+  .stance-opt {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .stance-opt:hover { border-color: var(--gray); }
+  .stance-opt.pro.active  { border-color: var(--cyan); background: rgba(0,245,255,0.06); }
+  .stance-opt.con.active  { border-color: var(--pink); background: rgba(255,51,102,0.06); }
+  .stance-opt input[type=radio] { display: none; }
+  .stance-label { font-size: 14px; font-weight: bold; }
+  .pro .stance-label { color: var(--cyan); }
+  .con .stance-label { color: var(--pink); }
+  .stance-desc { color: var(--text-dim); font-size: 11px; }
+  .btn {
+    padding: 10px 24px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    font-weight: bold; letter-spacing: 1px; cursor: pointer; border: none;
+    transition: all 0.2s; text-transform: uppercase;
+  }
+  .btn-cyan { background: var(--cyan); color: #000; }
+  .btn-cyan:hover { background: #00c8d0; }
+  .btn-cyan:disabled { background: var(--cyan-dim); cursor: not-allowed; color: #333; }
+  .btn-pink  { background: var(--pink); color: #fff; }
+  .btn-pink:hover  { background: #cc2952; }
+  .btn-gray  { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-gray:hover  { border-color: var(--gray); }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { background: #00cc6e; }
+  .btn-yellow { background: var(--yellow); color: #000; }
+  .btn-yellow:hover { background: #ccac00; }
+  .conn-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); }
+  .conn-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .conn-dot.bot-connected { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+  .conn-text { color: var(--text-dim); font-size: 11px; }
+
+  /* ── MAIN LAYOUT ── */
+  #main-panel { display: none; height: calc(100vh - 49px); display: none; flex-direction: column; }
+  #main-panel.visible { display: flex; }
+  .main-columns {
+    display: grid; grid-template-columns: 1fr 220px 1fr;
+    gap: 12px; padding: 12px; flex: 1; min-height: 0;
+  }
+
+  /* ── COLUMN PANELS ── */
+  .col-panel {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  }
+  .col-panel.bot-panel  { border-color: var(--cyan-dim); }
+  .col-panel.ctrl-panel { border-color: var(--border); }
+  .col-panel.opp-panel  { border-color: var(--pink-dim); }
+  .col-panel.bot-panel.active-turn  { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,245,255,0.15); }
+  .col-panel.opp-panel.active-turn  { border-color: var(--pink); box-shadow: 0 0 12px rgba(255,51,102,0.15); }
+
+  .panel-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .panel-title { font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+  .bot-panel .panel-title  { color: var(--cyan); }
+  .ctrl-panel .panel-title { color: var(--text); }
+  .opp-panel .panel-title  { color: var(--pink); }
+  .turn-badge {
+    font-size: 10px; font-weight: bold; letter-spacing: 1px; padding: 2px 8px;
+    border-radius: 10px; border: 1px solid;
+  }
+  .turn-badge.our-turn { color: var(--cyan); border-color: var(--cyan); animation: pulse-badge 1.5s infinite; }
+  .turn-badge.their-turn { color: var(--pink); border-color: var(--pink); animation: pulse-badge 1.5s infinite; }
+  .turn-badge.waiting { color: var(--gray); border-color: var(--gray); }
+
+  .panel-body { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── BOT MESSAGES ── */
+  .bot-msg {
+    background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.15);
+    border-radius: 4px; padding: 10px; margin-bottom: 10px;
+  }
+  .msg-meta { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+  .msg-phase { font-size: 10px; color: var(--cyan); border: 1px solid var(--cyan-dim); padding: 1px 6px; border-radius: 10px; }
+  .msg-chars { font-size: 10px; color: var(--text-dim); }
+  .msg-chars.over { color: var(--pink); }
+  .msg-time  { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+  .msg-text  { color: var(--text); line-height: 1.5; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+
+  .opp-msg {
+    background: rgba(255,51,102,0.05); border: 1px solid rgba(255,51,102,0.15);
+    border-radius: 4px; padding: 10px; margin-bottom: 10px;
+  }
+  .opp-msg .msg-phase { color: var(--pink); border-color: var(--pink-dim); }
+  .opp-msg .msg-text  { color: var(--text); }
+
+  .empty-state { color: var(--text-dim); font-size: 12px; padding: 20px 0; text-align: center; }
+
+  /* ── WAITING SPINNER ── */
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; margin-right: 6px;
+    border: 2px solid var(--bg3); border-top-color: var(--cyan);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .waiting-indicator {
+    display: none; align-items: center; color: var(--cyan); font-size: 11px;
+    padding: 8px 0;
+  }
+  .waiting-indicator.visible { display: flex; }
+
+  /* ── CONTROL PANEL ── */
+  .ctrl-section { margin-bottom: 16px; }
+  .ctrl-label { color: var(--text-dim); font-size: 10px; letter-spacing: 1px; margin-bottom: 8px; }
+
+  .phase-track { display: flex; flex-direction: column; gap: 4px; }
+  .phase-seg {
+    padding: 5px 10px; border-radius: 3px; font-size: 10px; letter-spacing: 1px;
+    border: 1px solid var(--border); color: var(--text-dim); cursor: default;
+    transition: all 0.3s;
+  }
+  .phase-seg.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,245,255,0.08); font-weight: bold; }
+  .phase-seg.done   { border-color: var(--cyan-dim); color: var(--cyan-dim); }
+
+  .timer-display {
+    font-size: 28px; font-weight: bold; text-align: center; color: var(--cyan);
+    padding: 8px 0; letter-spacing: 3px; transition: color 0.3s;
+  }
+  .timer-display.warning { color: var(--yellow); }
+  .timer-display.critical { color: var(--pink); animation: shake 0.5s infinite; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+
+  .counter-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .counter-item { text-align: center; flex: 1; }
+  .counter-val { font-size: 20px; font-weight: bold; }
+  .counter-val.cyan { color: var(--cyan); }
+  .counter-val.pink { color: var(--pink); }
+  .counter-lbl { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  .ctrl-btns { display: flex; flex-direction: column; gap: 6px; }
+
+  /* ── OPPONENT INPUT ── */
+  .opp-textarea {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 10px; border-radius: 4px;
+    font-family: inherit; font-size: 12px; line-height: 1.5;
+    resize: vertical; min-height: 160px; outline: none; transition: border-color 0.2s;
+  }
+  .opp-textarea:focus { border-color: var(--pink); }
+  .opp-textarea:disabled { opacity: 0.4; cursor: not-allowed; }
+  .char-count { font-size: 10px; margin: 4px 0 8px; }
+  .char-count.ok    { color: var(--text-dim); }
+  .char-count.warn  { color: var(--yellow); }
+  .char-count.over  { color: var(--pink); }
+
+  /* ── BOTTOM FEED ── */
+  .bottom-feed {
+    height: 160px; border-top: 1px solid var(--border); flex-shrink: 0;
+    background: var(--bg); padding: 8px 12px; overflow-y: auto;
+  }
+  .bottom-feed::-webkit-scrollbar { width: 4px; }
+  .bottom-feed::-webkit-scrollbar-thumb { background: var(--border); }
+  .feed-title { color: var(--text-dim); font-size: 10px; letter-spacing: 1px; margin-bottom: 6px; }
+  .feed-entry { font-size: 11px; margin-bottom: 3px; display: flex; gap: 8px; }
+  .feed-ts    { color: var(--text-dim); flex-shrink: 0; }
+  .feed-msg.info    { color: var(--text); }
+  .feed-msg.success { color: var(--green); }
+  .feed-msg.warn    { color: var(--yellow); }
+  .feed-msg.error   { color: var(--pink); }
+  .feed-msg.bot     { color: var(--cyan); }
+  .feed-msg.opp     { color: var(--pink); }
+
+  /* ── OVERLAY ── */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 200; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .overlay.visible { display: flex; }
+  .overlay-title { font-size: 28px; font-weight: bold; letter-spacing: 4px; margin-bottom: 16px; }
+  .overlay-title.cyan { color: var(--cyan); text-shadow: 0 0 20px var(--cyan); }
+  .overlay-stats { color: var(--text-dim); font-size: 13px; text-align: center; line-height: 2; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">AGENT SLAM 2026 — TEST CONTROLLER</div>
+    <div class="topbar-subtitle">Human-in-the-Loop Interactive Testing</div>
+  </div>
+  <div id="status-badge" class="status-badge waiting">WAITING</div>
+</div>
+
+<!-- SETUP PANEL -->
+<div id="setup-panel">
+  <h2>MATCH CONFIGURATION</h2>
+
+  <div class="conn-row">
+    <div id="srv-dot" class="conn-dot"></div>
+    <span id="srv-text" class="conn-text">Not connected to server</span>
+    <div id="bot-dot" class="conn-dot" style="margin-left:16px"></div>
+    <span id="bot-text" class="conn-text">Bot not connected</span>
+  </div>
+
+  <div class="form-row">
+    <label>DEBATE TOPIC</label>
+    <input type="text" id="cfg-topic" value="Artificial Intelligence will do more harm than good to society">
+  </div>
+
+  <div class="form-row">
+    <label>DESCRIPTION (shown to bot)</label>
+    <input type="text" id="cfg-desc" value="Debate whether AI's net impact on humanity is negative, considering job displacement, misinformation, surveillance, existential risk versus economic growth, medical advances, and productivity gains.">
+  </div>
+
+  <div class="form-row">
+    <label>OUR BOT STANCE</label>
+    <div class="stance-row">
+      <label class="stance-opt pro active" id="opt-pro">
+        <input type="radio" name="stance" value="team1" checked>
+        <div>
+          <div class="stance-label">PRO — team1</div>
+          <div class="stance-desc">Bot argues FOR the motion</div>
+        </div>
+      </label>
+      <label class="stance-opt con" id="opt-con">
+        <input type="radio" name="stance" value="team2">
+        <div>
+          <div class="stance-label">CON — team2</div>
+          <div class="stance-desc">Bot argues AGAINST the motion</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <label>MATCH DURATION (seconds) — use 200 to quickly reach closing phase</label>
+    <input type="number" id="cfg-duration" value="900" min="60" max="3600">
+  </div>
+
+  <div class="form-row">
+    <label>ROUND NAME</label>
+    <input type="text" id="cfg-round" value="Round 1 — Test Run">
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:8px">
+    <button class="btn btn-gray" id="btn-connect" onclick="connectServer()">CONNECT TO SERVER</button>
+    <button class="btn btn-cyan" id="btn-start" onclick="startMatch()" disabled>START MATCH</button>
+  </div>
+  <div style="margin-top:10px;color:var(--text-dim);font-size:11px">
+    First run: <code style="color:var(--cyan)">python tests/interactive_server.py</code> then
+    <code style="color:var(--cyan)">python agent.py</code> (with WS_URL=ws://localhost:8766)
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="main-panel">
+  <div class="main-columns">
+
+    <!-- LEFT: BOT FEED -->
+    <div class="col-panel bot-panel" id="bot-panel">
+      <div class="panel-header">
+        <span class="panel-title">OUR BOT</span>
+        <span id="bot-turn-badge" class="turn-badge waiting">WAITING</span>
+      </div>
+      <div class="panel-body" id="bot-feed">
+        <div class="empty-state">Waiting for bot opening argument...</div>
+      </div>
+    </div>
+
+    <!-- CENTER: CONTROLS -->
+    <div class="col-panel ctrl-panel">
+      <div class="panel-header">
+        <span class="panel-title">MATCH</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="ctrl-section">
+          <div class="ctrl-label">TIME REMAINING</div>
+          <div class="timer-display" id="timer">15:00</div>
+        </div>
+
+        <div class="ctrl-section">
+          <div class="ctrl-label">MESSAGES</div>
+          <div class="counter-row">
+            <div class="counter-item">
+              <div class="counter-val cyan" id="bot-count">0</div>
+              <div class="counter-lbl">BOT</div>
+            </div>
+            <div class="counter-item">
+              <div class="counter-val pink" id="opp-count">0</div>
+              <div class="counter-lbl">OPPONENT</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctrl-section">
+          <div class="ctrl-label">PHASE</div>
+          <div class="phase-track" id="phase-track">
+            <div class="phase-seg active" data-phase="opening">OPENING</div>
+            <div class="phase-seg" data-phase="rebuttal_first">REBUTTAL</div>
+            <div class="phase-seg" data-phase="cross_examination">CROSS EXAM</div>
+            <div class="phase-seg" data-phase="defense">DEFENSE</div>
+            <div class="phase-seg" data-phase="closing">CLOSING</div>
+          </div>
+        </div>
+
+        <div class="ctrl-section">
+          <div class="ctrl-label">CONTROLS</div>
+          <div class="ctrl-btns">
+            <button class="btn btn-yellow btn-sm" onclick="setTime(150)" style="font-size:11px;padding:6px 10px">
+              SET TIME → 2:30 (closing)
+            </button>
+            <button class="btn btn-pink btn-sm" onclick="endMatch()" style="font-size:11px;padding:6px 10px">
+              END MATCH
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: OPPONENT INPUT -->
+    <div class="col-panel opp-panel" id="opp-panel">
+      <div class="panel-header">
+        <span class="panel-title">OPPONENT (YOU)</span>
+        <span id="opp-turn-badge" class="turn-badge waiting">WAITING</span>
+      </div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+
+        <div style="color:var(--text-dim);font-size:11px;line-height:1.6">
+          1. Copy bot's argument above<br>
+          2. Paste into ChatGPT with prompt:<br>
+          <span style="color:var(--pink);font-size:10px">"You are debating [STANCE]. Counter this argument in under 2800 chars, plain text only."</span><br>
+          3. Paste ChatGPT's response below
+        </div>
+
+        <div>
+          <textarea
+            class="opp-textarea"
+            id="opp-input"
+            placeholder="Paste opponent response here (from ChatGPT, Claude, etc.)..."
+            oninput="updateCharCount()"
+            disabled
+          ></textarea>
+          <div class="char-count ok" id="char-count">0 / 2800 chars</div>
+          <button class="btn btn-pink" id="btn-send-opp" onclick="sendOpponentMessage()" disabled style="width:100%">
+            SEND AS OPPONENT
+          </button>
+        </div>
+
+        <div class="waiting-indicator" id="waiting-bot">
+          <div class="spinner"></div>
+          Bot is generating response...
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+          <div class="ctrl-label">PREVIOUS OPPONENT MESSAGES</div>
+          <div id="opp-history">
+            <div class="empty-state" style="font-size:11px">No messages yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end main-columns -->
+
+  <!-- BOTTOM FEED -->
+  <div class="bottom-feed">
+    <div class="feed-title">LIVE EVENT LOG</div>
+    <div id="event-log"></div>
+  </div>
+</div>
+
+<!-- FINISH OVERLAY -->
+<div class="overlay" id="finish-overlay">
+  <div class="overlay-title cyan">MATCH COMPLETE</div>
+  <div class="overlay-stats" id="finish-stats"></div>
+  <button class="btn btn-gray" onclick="document.getElementById('finish-overlay').classList.remove('visible')" style="margin-top:20px">CLOSE</button>
+</div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+
+const WS_URL = 'ws://localhost:8766';
+let ws = null;
+let matchStarted = false;
+let finishTime = 0;
+let botMsgCount = 0;
+let oppMsgCount = 0;
+let botTeam = 'team1';
+let timerInterval = null;
+let waitingForBot = false;
+
+// ============================================================
+// Connection
+// ============================================================
+
+function connectServer() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+
+  log('Connecting to ' + WS_URL + '...', 'info');
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'dashboard-hello' }));
+    setSrvDot(true);
+    log('Connected to interactive server', 'success');
+    document.getElementById('btn-start').disabled = false;
+  };
+
+  ws.onmessage = (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+    handleServerMessage(msg);
+  };
+
+  ws.onclose = () => {
+    setSrvDot(false);
+    log('Disconnected from server — refresh to reconnect', 'error');
+    document.getElementById('btn-start').disabled = true;
+    setTimeout(connectServer, 3000);
+  };
+
+  ws.onerror = () => {
+    log('WebSocket error — is interactive_server.py running?', 'error');
+  };
+}
+
+function handleServerMessage(msg) {
+  const type = msg.type;
+  const data = msg.data || {};
+
+  if (type === 'server-event') {
+    const text = data.message || '';
+    const cls = text.startsWith('ERROR') ? 'error' : 'info';
+    log(text, cls);
+
+    if (text.includes('Bot connected')) setBotDot(true);
+    if (text.includes('Bot disconnected')) { setBotDot(false); setWaitingForBot(false); }
+    if (data.waitingForOpponent) setWaitingForOpponent();
+    if (data.waitingForBot)      setWaitingForBot(true);
+    if (data.finishTime)  { finishTime = data.finishTime; startTimer(); }
+    if (data.botTeam)     { botTeam = data.botTeam; }
+    if (data.topic)       { /* could update UI with topic */ }
+
+    if (text.includes('Match started')) {
+      showMainPanel();
+      setStatus('live');
+    }
+    if (text.includes('Match ended')) {
+      setStatus('finished');
+      showFinishOverlay();
+    }
+
+  } else if (type === 'debate-message') {
+    const team = msg.from;
+    const text = data.message || '';
+    const meta = msg.meta || {};
+
+    if (team === botTeam) {
+      addBotMessage(text, meta);
+      setWaitingForBot(false);
+      setWaitingForOpponent();
+    } else {
+      addOppHistory(text);
+    }
+
+  } else if (type === 'match-finish') {
+    setStatus('finished');
+    showFinishOverlay();
+  }
+}
+
+// ============================================================
+// Match control
+// ============================================================
+
+function startMatch() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert('Not connected to server. Click Connect first.');
+    return;
+  }
+
+  const stance = document.querySelector('input[name=stance]:checked').value;
+  botTeam = stance;
+
+  ws.send(JSON.stringify({
+    type: 'start-match',
+    data: {
+      topic: document.getElementById('cfg-topic').value,
+      description: document.getElementById('cfg-desc').value,
+      round: document.getElementById('cfg-round').value,
+      botTeam: stance,
+      durationSeconds: parseInt(document.getElementById('cfg-duration').value),
+    }
+  }));
+
+  log('Match config sent — waiting for bot opening argument...', 'success');
+  document.getElementById('btn-start').disabled = true;
+}
+
+function sendOpponentMessage() {
+  const text = document.getElementById('opp-input').value.trim();
+  if (!text) return;
+  if (text.length > 3000) {
+    alert('Message exceeds 3000 characters. Please shorten it.');
+    return;
+  }
+
+  ws.send(JSON.stringify({ type: 'inject-opponent', data: { message: text } }));
+
+  oppMsgCount++;
+  document.getElementById('opp-count').textContent = oppMsgCount;
+
+  log(`Opponent message sent (${text.length} chars)`, 'opp');
+
+  document.getElementById('opp-input').value = '';
+  updateCharCount();
+  setWaitingForBot(true);
+  setOppTurnBadge(false);
+  document.getElementById('btn-send-opp').disabled = true;
+  document.getElementById('opp-input').disabled = true;
+}
+
+function setTime(seconds) {
+  ws.send(JSON.stringify({ type: 'set-time', data: { seconds } }));
+  log(`Time set to ${seconds}s — closing phase will trigger when bot has 4+ messages`, 'warn');
+}
+
+function endMatch() {
+  if (!confirm('End match and shut down bot?')) return;
+  ws.send(JSON.stringify({ type: 'end-match' }));
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+
+function showMainPanel() {
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('main-panel').classList.add('visible');
+  matchStarted = true;
+}
+
+function setStatus(s) {
+  const el = document.getElementById('status-badge');
+  el.className = 'status-badge ' + s;
+  el.textContent = s.toUpperCase();
+}
+
+function setSrvDot(on) {
+  document.getElementById('srv-dot').className = 'conn-dot' + (on ? ' connected' : '');
+  document.getElementById('srv-text').textContent = on ? 'Server connected' : 'Not connected to server';
+}
+
+function setBotDot(on) {
+  document.getElementById('bot-dot').className = 'conn-dot' + (on ? ' bot-connected' : '');
+  document.getElementById('bot-text').textContent = on ? 'Bot connected' : 'Bot not connected';
+}
+
+function setWaitingForOpponent() {
+  // It's now the human's turn to paste
+  waitingForBot = false;
+  document.getElementById('opp-input').disabled = false;
+  document.getElementById('btn-send-opp').disabled = false;
+  document.getElementById('waiting-bot').classList.remove('visible');
+  setOppTurnBadge(true);
+  setBotTurnBadge(false);
+  document.getElementById('opp-panel').classList.add('active-turn');
+  document.getElementById('bot-panel').classList.remove('active-turn');
+  log('Your turn — paste opponent response', 'opp');
+}
+
+function setWaitingForBot(on) {
+  waitingForBot = on;
+  document.getElementById('waiting-bot').classList.toggle('visible', on);
+  if (on) {
+    document.getElementById('opp-input').disabled = true;
+    document.getElementById('btn-send-opp').disabled = true;
+    setBotTurnBadge(true);
+    setOppTurnBadge(false);
+    document.getElementById('bot-panel').classList.add('active-turn');
+    document.getElementById('opp-panel').classList.remove('active-turn');
+  }
+}
+
+function setBotTurnBadge(active) {
+  const el = document.getElementById('bot-turn-badge');
+  el.className = 'turn-badge ' + (active ? 'our-turn' : 'waiting');
+  el.textContent = active ? 'GENERATING' : 'WAITING';
+}
+
+function setOppTurnBadge(active) {
+  const el = document.getElementById('opp-turn-badge');
+  el.className = 'turn-badge ' + (active ? 'their-turn' : 'waiting');
+  el.textContent = active ? 'YOUR TURN' : 'WAITING';
+}
+
+// ============================================================
+// Bot message display
+// ============================================================
+
+const PHASE_ORDER = ['opening','rebuttal_first','cross_examination','defense','closing'];
+
+function getPhaseLabel(botCount, secRemaining) {
+  if (botCount === 0) return 'opening';
+  if (secRemaining < 180 && botCount >= 4) return 'closing';
+  if (botCount === 1) return 'rebuttal_first';
+  if (botCount <= 3) return 'cross_examination';
+  return 'defense';
+}
+
+function addBotMessage(text, meta) {
+  botMsgCount++;
+  document.getElementById('bot-count').textContent = botMsgCount;
+
+  const secRemaining = finishTime ? Math.max(0, (finishTime - Date.now()) / 1000) : 999;
+  const phase = getPhaseLabel(botMsgCount - 1, secRemaining);
+  updatePhaseTrack(phase);
+
+  const feed = document.getElementById('bot-feed');
+
+  // Remove empty state
+  const empty = feed.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const chars = text.length;
+  const timeStr = new Date().toLocaleTimeString();
+
+  const el = document.createElement('div');
+  el.className = 'bot-msg';
+  el.innerHTML = `
+    <div class="msg-meta">
+      <span class="msg-phase">${phase.replace('_',' ').toUpperCase()}</span>
+      <span class="msg-chars ${chars > 2800 ? 'over' : ''}">${chars} chars${chars > 2800 ? ' OVER LIMIT' : ''}</span>
+      <span class="msg-time">${timeStr}</span>
+    </div>
+    <div class="msg-text">${escHtml(text)}</div>
+  `;
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+
+  log(`Bot argument #${botMsgCount} — ${chars} chars [${phase}]`, 'bot');
+
+  // Check for issues
+  if (chars > 2800) log('WARNING: response over 2800 chars!', 'warn');
+  if (/\*\*|\*|^#/m.test(text)) log('WARNING: markdown detected in response', 'warn');
+  const urls = (text.match(/https?:\/\/\S+/g) || []);
+  if (urls.length === 0 && phase !== 'closing') log('WARNING: no source URLs cited', 'warn');
+  else if (urls.length > 0) log(`URLs cited: ${urls.length}`, 'success');
+}
+
+function addOppHistory(text) {
+  const hist = document.getElementById('opp-history');
+  const empty = hist.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const el = document.createElement('div');
+  el.className = 'opp-msg';
+  el.style.marginBottom = '8px';
+  el.innerHTML = `
+    <div class="msg-meta">
+      <span class="msg-phase" style="color:var(--pink);border-color:var(--pink-dim)">OPPONENT</span>
+      <span class="msg-chars">${text.length} chars</span>
+      <span class="msg-time">${new Date().toLocaleTimeString()}</span>
+    </div>
+    <div class="msg-text" style="font-size:11px">${escHtml(text)}</div>
+  `;
+  hist.appendChild(el);
+  hist.scrollTop = hist.scrollHeight;
+}
+
+function updatePhaseTrack(currentPhase) {
+  const segs = document.querySelectorAll('.phase-seg');
+  let passed = false;
+  segs.forEach(seg => {
+    const p = seg.dataset.phase;
+    if (p === currentPhase) {
+      seg.className = 'phase-seg active';
+      passed = true;
+    } else if (!passed) {
+      seg.className = 'phase-seg done';
+    } else {
+      seg.className = 'phase-seg';
+    }
+  });
+}
+
+// ============================================================
+// Timer
+// ============================================================
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 500);
+  updateTimer();
+}
+
+function updateTimer() {
+  if (!finishTime) return;
+  const remaining = Math.max(0, finishTime - Date.now());
+  const secs = Math.floor(remaining / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2,'0');
+  const ss = String(secs % 60).padStart(2,'0');
+  const el = document.getElementById('timer');
+  el.textContent = mm + ':' + ss;
+  if (secs < 60)  el.className = 'timer-display critical';
+  else if (secs < 180) el.className = 'timer-display warning';
+  else el.className = 'timer-display';
+}
+
+// ============================================================
+// Char count
+// ============================================================
+
+function updateCharCount() {
+  const text = document.getElementById('opp-input').value;
+  const len = text.length;
+  const el = document.getElementById('char-count');
+  el.textContent = len + ' / 2800 chars';
+  if (len > 3000)      el.className = 'char-count over';
+  else if (len > 2800) el.className = 'char-count warn';
+  else                 el.className = 'char-count ok';
+}
+
+// ============================================================
+// Finish overlay
+// ============================================================
+
+function showFinishOverlay() {
+  if (timerInterval) clearInterval(timerInterval);
+  document.getElementById('finish-stats').innerHTML =
+    `Bot messages sent: <strong style="color:var(--cyan)">${botMsgCount}</strong><br>
+     Opponent messages: <strong style="color:var(--pink)">${oppMsgCount}</strong><br>
+     Total exchanges: <strong>${botMsgCount + oppMsgCount}</strong><br><br>
+     Check bot terminal for API usage + cost summary.`;
+  document.getElementById('finish-overlay').classList.add('visible');
+}
+
+// ============================================================
+// Event log
+// ============================================================
+
+function log(msg, cls = 'info') {
+  const log = document.getElementById('event-log');
+  const el = document.createElement('div');
+  el.className = 'feed-entry';
+  const now = new Date().toLocaleTimeString();
+  el.innerHTML = `<span class="feed-ts">${now}</span><span class="feed-msg ${cls}">${escHtml(msg)}</span>`;
+  log.appendChild(el);
+  if (log.children.length > 200) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// Stance toggle
+// ============================================================
+
+document.querySelectorAll('input[name=stance]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.getElementById('opt-pro').classList.toggle('active', radio.value === 'team1' && radio.checked);
+    document.getElementById('opt-con').classList.toggle('active', radio.value === 'team2' && radio.checked);
+    // re-evaluate which is active
+    const checked = document.querySelector('input[name=stance]:checked').value;
+    document.getElementById('opt-pro').classList.toggle('active', checked === 'team1');
+    document.getElementById('opt-con').classList.toggle('active', checked === 'team2');
+  });
+});
+
+// ============================================================
+// Auto-connect on load
+// ============================================================
+
+window.addEventListener('load', () => {
+  connectServer();
+});
+</script>
+</body>
+</html>
