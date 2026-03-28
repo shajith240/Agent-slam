@@ -924,6 +924,21 @@ html, body {
           </div>
           <div class="inject-status" id="inject-status"></div>
         </div>
+
+        <!-- LOCAL TIMER (TEST MODE only, when server doesn't provide finishTime) -->
+        <div class="inject-panel" id="local-timer-panel" style="margin-top:8px">
+          <div class="inject-label">Local Match Timer</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="local-timer-duration" value="900" min="30" max="3600"
+              style="width:80px;background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-family:inherit;font-size:13px"
+              title="Duration in seconds">
+            <span style="color:var(--text-secondary);font-size:11px">sec</span>
+            <button onclick="startLocalTimer()" class="inject-btn" style="flex:1">Start Timer</button>
+          </div>
+          <div style="color:var(--text-secondary);font-size:10px;margin-top:4px">
+            Use when sandbox server doesn't send a match duration.
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1061,6 +1076,8 @@ const monitor = {
   ourCharCounts: [],
   citedSources: new Set(),
   events: [],
+  lastInjectText: "",
+  lastInjectTime: 0,
 };
 
 let ws = null;
@@ -1092,6 +1109,7 @@ function setTestMode(enabled) {
 
   $("test-mode-banner").classList.toggle("visible", enabled);
   $("inject-panel").classList.toggle("visible", enabled);
+  $("local-timer-panel").classList.toggle("visible", enabled);
   $("panel-right").classList.toggle("test-mode-active", enabled);
 
   $("opp-conn").textContent = enabled ? "Manual (Test)" : "Live Observer";
@@ -1102,6 +1120,13 @@ function setTestMode(enabled) {
 
 $("btn-live-mode").addEventListener("click", () => setTestMode(false));
 $("btn-test-mode").addEventListener("click", () => setTestMode(true));
+
+function startLocalTimer() {
+  const secs = parseInt($("local-timer-duration").value) || 900;
+  state.finishTime = Date.now() + secs * 1000;
+  startTimer();
+  monitorLog("inject", "Local timer started: " + secs + "s");
+}
 
 // ===== INJECT LOGIC =====
 const injectTextarea = $("inject-textarea");
@@ -1163,6 +1188,10 @@ function injectOpponentMessage() {
     injectCharCount.textContent = "0 / 3000";
     injectCharCount.className = "inject-char-count";
     injectBtn.disabled = true;
+
+    // Track inject so we can suppress the sandbox echo
+    monitor.lastInjectText = msg;
+    monitor.lastInjectTime = Date.now();
 
     // Reset turn start for response time tracking
     monitor.lastTurnStart = Date.now();
@@ -1321,6 +1350,18 @@ function initSetup() {
   const savedTeam = localStorage.getItem("slam_team") || "";
   $("ws-url-input").value = savedUrl;
   $("team-input").value = savedTeam;
+
+  // Auto-connect if credentials already saved (handles page reload)
+  if (savedUrl && savedTeam) {
+    CONFIG.WS_URL = savedUrl;
+    CONFIG.TEAM_NAME = savedTeam;
+    state.ourTeam = savedTeam;
+    $("setup-screen").classList.add("hidden");
+    $("main-screen").classList.add("active");
+    $("our-team-name").textContent = savedTeam;
+    connectWS();
+    return;
+  }
 
   $("connect-btn").addEventListener("click", () => {
     const url = $("ws-url-input").value.trim();
@@ -1503,29 +1544,36 @@ function handleDebateMessage(parsed) {
 function handleSandboxMessage(parsed) {
   // Sandbox echo of our own message — update left panel
   const msg = (parsed.data || {}).message || "";
-  if (msg) {
-    $("our-last-arg").textContent = msg;
-    monitorLog("info", "Sandbox echo: " + msg.length + " chars");
-    monitor.ourCharCounts.push(msg.length);
-    extractSources(msg);
+  if (!msg) return;
 
-    if (monitor.lastTurnStart > 0) {
-      const elapsed = (Date.now() - monitor.lastTurnStart) / 1000;
-      monitor.responseTimes.push(elapsed);
-      monitorLog("info", "Response time: " + elapsed.toFixed(1) + "s");
-      monitor.lastTurnStart = 0;
-    }
-
-    state.messageCount++;
-    state.conversation.push({
-      team: state.ourTeam,
-      message: msg,
-      timestamp: String(Date.now()),
-      isOurs: true,
-    });
-    addChatMsg(msg, true, state.ourTeam, false);
-    updateAll();
+  // Suppress echo of injected opponent messages (sandbox server bounces them back)
+  const isInjectEcho = msg === monitor.lastInjectText && (Date.now() - monitor.lastInjectTime) < 5000;
+  if (isInjectEcho) {
+    monitorLog("info", "Sandbox echo (inject suppressed)");
+    return;
   }
+
+  $("our-last-arg").textContent = msg;
+  monitorLog("info", "Sandbox echo: " + msg.length + " chars");
+  monitor.ourCharCounts.push(msg.length);
+  extractSources(msg);
+
+  if (monitor.lastTurnStart > 0) {
+    const elapsed = (Date.now() - monitor.lastTurnStart) / 1000;
+    monitor.responseTimes.push(elapsed);
+    monitorLog("info", "Response time: " + elapsed.toFixed(1) + "s");
+    monitor.lastTurnStart = 0;
+  }
+
+  state.messageCount++;
+  state.conversation.push({
+    team: state.ourTeam,
+    message: msg,
+    timestamp: String(Date.now()),
+    isOurs: true,
+  });
+  addChatMsg(msg, true, state.ourTeam, false);
+  updateAll();
 }
 
 function handleMatchResumed(data) {

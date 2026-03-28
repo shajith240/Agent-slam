@@ -192,12 +192,38 @@ async def handle_bot(ws):
                 })
 
             elif msg_type == "sandbox-message":
-                # Bot sent in sandbox mode — treat same as debate-message
+                # Bot sent in sandbox mode — treat exactly like debate-message
                 text = msg.get("data", {}).get("message", "")
-                log.info("Bot sandbox message: %d chars", len(text))
+                session.bot_message_count += 1
+                log.info("Bot sandbox argument #%d: %d chars", session.bot_message_count, len(text))
+
+                await send(ws, {
+                    "type": "info",
+                    "from": "system",
+                    "timestamp": ts(),
+                    "data": {"message": "argument received"},
+                })
+
+                await broadcast_to_dashboard({
+                    "type": "debate-message",
+                    "from": session.bot_team,
+                    "timestamp": ts(),
+                    "data": {"message": text},
+                    "meta": {
+                        "charCount": len(text),
+                        "botMessageCount": session.bot_message_count,
+                    },
+                })
+
+                await send(ws, session.build_match_state("started", session.opponent_team))
+
                 await broadcast_to_dashboard({
                     "type": "server-event",
-                    "data": {"message": f"[sandbox] Bot sent: {text[:80]}..."},
+                    "data": {
+                        "message": f"Bot sent argument #{session.bot_message_count}. "
+                                   f"Paste opponent response and click Send.",
+                        "waitingForOpponent": True,
+                    },
                 })
 
             else:
@@ -502,8 +528,39 @@ async def handle_bot_with_first_message(ws, first_msg: dict):
                 })
 
             elif msg_type == "sandbox-message":
+                # Bot sent in sandbox mode — treat exactly like debate-message
                 text = msg.get("data", {}).get("message", "")
-                log.info("Bot sandbox msg: %d chars", len(text))
+                session.bot_message_count += 1
+                log.info("Bot sandbox argument #%d: %d chars", session.bot_message_count, len(text))
+
+                await send(ws, {
+                    "type": "info",
+                    "from": "system",
+                    "timestamp": ts(),
+                    "data": {"message": "argument received"},
+                })
+
+                await broadcast_to_dashboard({
+                    "type": "debate-message",
+                    "from": session.bot_team,
+                    "timestamp": ts(),
+                    "data": {"message": text},
+                    "meta": {
+                        "charCount": len(text),
+                        "botMessageCount": session.bot_message_count,
+                    },
+                })
+
+                await send(ws, session.build_match_state("started", session.opponent_team))
+
+                await broadcast_to_dashboard({
+                    "type": "server-event",
+                    "data": {
+                        "message": f"Bot sent argument #{session.bot_message_count}. "
+                                   f"Paste opponent response and click Send.",
+                        "waitingForOpponent": True,
+                    },
+                })
 
     except websockets.exceptions.ConnectionClosed:
         log.info("Bot disconnected")
