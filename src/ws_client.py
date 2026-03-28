@@ -14,6 +14,10 @@ from src.debate_engine import DebateEngine
 
 logger = logging.getLogger(__name__)
 
+# Separate debate transcript logger — clean readable log of just messages
+_transcript = logging.getLogger("transcript")
+_transcript.propagate = False  # don't duplicate into main log
+
 
 class WSClient:
 
@@ -137,6 +141,7 @@ class WSClient:
 
                 elif msg_type == "error":
                     logger.warning("Server error: %s", data.get("message"))
+                    _transcript.info("SERVER ERROR: %s", data.get("message"))
 
                 elif msg_type == "info":
                     logger.info("Server info: %s", data.get("message"))
@@ -155,6 +160,12 @@ class WSClient:
             "State updated — turn: %s, status: %s, topic: %s",
             self.state.turn, self.state.status, self.state.topic,
         )
+        if self.state.status == "started" and self.state.topic:
+            _transcript.info(
+                "MATCH STATE — topic: %s | stance: %s | turn: %s | remaining: %ds",
+                self.state.topic, self.state.our_stance, self.state.turn,
+                self.state.seconds_remaining_in_match,
+            )
 
         # One-time research: fires when topic first arrives at match start
         if (self.state.topic
@@ -189,6 +200,10 @@ class WSClient:
         if team != self.state.our_team:
             self.state.record_opponent_message(team, message, timestamp)
             logger.info("Opponent argued: %s...", message[:100])
+            _transcript.info(
+                "\n%s\n[OPPONENT] (%d chars):\n%s\n%s",
+                "=" * 60, len(message), message, "=" * 60,
+            )
 
             # If opponent cited a specific URL, fetch it via Jina so we can rebut directly
             if self.engine.use_web_search:
@@ -222,6 +237,7 @@ class WSClient:
     async def handle_match_finish(self) -> None:
         self.running = False
         logger.info("Match finished. %s", self.engine.usage_summary())
+        _transcript.info("\nMATCH FINISHED — %s", self.engine.usage_summary())
 
     async def handle_previous_messages(self, data: dict) -> None:
         conversations = data.get("conversations", [])
@@ -326,6 +342,11 @@ class WSClient:
             self._last_sent_message = argument
             self.state.record_our_message(argument)
             logger.info("Sent argument [%s] turn=%s: %d chars", msg_type, turn_id, len(argument))
+            _transcript.info(
+                "\n%s\n[US — %s] (%d chars, %.1fs, phase=%s):\n%s\n%s",
+                "-" * 60, call_mode.upper(), len(argument), elapsed,
+                self.state.debate_phase, argument, "-" * 60,
+            )
 
         except Exception as e:
             logger.error("Failed to send argument: %s", e)

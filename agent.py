@@ -20,6 +20,14 @@ logging.basicConfig(
     ],
 )
 
+# Debate transcript — clean readable file with just the debate messages
+# Monitor live with:  tail -f logs/transcript_*.txt
+_transcript_logger = logging.getLogger("transcript")
+_transcript_logger.setLevel(logging.INFO)
+_th = logging.FileHandler(f"logs/transcript_{timestamp}.txt")
+_th.setFormatter(logging.Formatter("%(asctime)s  %(message)s", datefmt="%H:%M:%S"))
+_transcript_logger.addHandler(_th)
+
 logger = logging.getLogger(__name__)
 
 from src.config import WS_URL, SANDBOX_WS_URL, TEAM_NAME, ANTHROPIC_API_KEY, MODEL
