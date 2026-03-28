@@ -20,6 +20,7 @@ class MatchState:
     our_team: str = ""
     turn_start_time: float = 0.0
     message_count: int = 0
+    response_times: list = field(default_factory=list)  # seconds per turn
 
     @property
     def our_stance(self) -> str:
@@ -46,6 +47,38 @@ class MatchState:
         return time.time() - self.turn_start_time
 
     @property
+    def avg_response_time(self) -> float:
+        """Average seconds taken per turn so far. 0.0 if no turns completed."""
+        if not self.response_times:
+            return 0.0
+        return sum(self.response_times) / len(self.response_times)
+
+    @property
+    def call_mode(self) -> str:
+        """
+        5-zone adaptive mode based on match time remaining and average response time.
+
+        Zones:
+          fast       - >240s left AND avg < 20s  → full web search, full prompt
+          normal     - >240s left AND avg 20-45s → full web search, standard prompt
+          caution    - 120-240s left OR avg 45-60s → NO web search, lightweight prompt
+          emergency  - 60-120s left OR avg > 60s  → synthesis fallback, no API tools
+          critical   - <60s left                  → hardcoded emergency closing
+        """
+        remaining = self.seconds_remaining_in_match
+        avg = self.avg_response_time
+
+        if remaining < 60:
+            return "critical"
+        if remaining < 120 or avg > 60:
+            return "emergency"
+        if remaining < 240 or avg > 45:
+            return "caution"
+        if avg < 20:
+            return "fast"
+        return "normal"
+
+    @property
     def debate_phase(self) -> str:
         if self.message_count == 0:
             return "opening"
@@ -56,6 +89,10 @@ class MatchState:
         if self.message_count <= 3:
             return "cross_examination"
         return "defense"
+
+    def record_response_time(self, seconds: float) -> None:
+        """Call this after each successful turn to track timing."""
+        self.response_times.append(seconds)
 
     def update_from_match_state(self, data: dict) -> None:
         self.team1 = data.get("team1", self.team1)
@@ -139,3 +176,4 @@ class MatchState:
         self.our_team = our_team
         self.turn_start_time = 0.0
         self.message_count = 0
+        self.response_times = []

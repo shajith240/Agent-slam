@@ -110,7 +110,8 @@ class WSClient:
                     await self.handle_debate_message(parsed)
 
                 elif msg_type == "sandbox-message":
-                    logger.info("Sandbox echo: %s", data.get("message", "")[:100])
+                    echo_msg = data.get("message", "")
+                    logger.info("Sandbox echo received: %d chars", len(echo_msg))
 
                 elif msg_type == "match-paused":
                     self.state.status = "paused"
@@ -167,7 +168,6 @@ class WSClient:
             logger.info("Opponent argued: %s...", message[:100])
 
             if self.state.status == "started":
-                # Opponent just spoke — it is now our turn
                 self.state.turn = self.state.our_team
                 self.state.turn_start_time = time.time()
                 logger.info("IT IS OUR TURN (via debate-message) — generating argument")
@@ -216,12 +216,57 @@ class WSClient:
             self._turn_in_progress = False
             return
 
+        call_mode = self.state.call_mode
+        logger.info(
+            "[turn:%s] call_mode=%s remaining=%ds avg_resp=%.1fs phase=%s",
+            turn_id, call_mode,
+            self.state.seconds_remaining_in_match,
+            self.state.avg_response_time,
+            self.state.debate_phase,
+        )
+
+        turn_start = time.time()
+
         try:
-            argument = await asyncio.to_thread(self.engine.generate_argument, self.state)
+            # Route to correct generation method based on call_mode
+            if call_mode == "critical":
+                # Hardcoded closing — no API call needed
+                from src.debate_engine import EMERGENCY_CLOSING_PRO, EMERGENCY_CLOSING_CON
+                argument = (
+                    EMERGENCY_CLOSING_PRO
+                    if self.state.our_stance == "PRO"
+                    else EMERGENCY_CLOSING_CON
+                )
+                logger.critical("[turn:%s] CRITICAL mode — sending hardcoded closing", turn_id)
+
+            elif call_mode == "emergency":
+                argument = await asyncio.to_thread(
+                    self.engine.generate_emergency_argument, self.state
+                )
+                logger.warning("[turn:%s] EMERGENCY mode used", turn_id)
+
+            elif call_mode == "caution":
+                argument = await asyncio.to_thread(
+                    self.engine.generate_caution_argument, self.state
+                )
+                logger.warning("[turn:%s] CAUTION mode used", turn_id)
+
+            else:  # normal or fast
+                argument = await asyncio.to_thread(
+                    self.engine.generate_argument, self.state
+                )
+                logger.info("[turn:%s] NORMAL/FAST mode used", turn_id)
+
+            # Record response time BEFORE duplicate check so timing is accurate
+            elapsed = time.time() - turn_start
+            self.state.record_response_time(elapsed)
+            logger.info("[turn:%s] response_time=%.1fs (avg now %.1fs)", turn_id, elapsed, self.state.avg_response_time)
 
             if argument == self._last_sent_message:
-                logger.warning("Duplicate message detected, regenerating")
-                argument = self.engine.generate_argument(self.state)
+                logger.warning("Duplicate message detected, regenerating with caution mode")
+                argument = await asyncio.to_thread(
+                    self.engine.generate_caution_argument, self.state
+                )
 
             if self.state.status != "started" and not self.sandbox:
                 logger.warning("Match state changed during generation (now %s), aborting send", self.state.status)

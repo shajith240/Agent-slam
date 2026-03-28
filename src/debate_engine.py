@@ -51,6 +51,22 @@ FALLBACK_ARGUMENTS = {
     ),
 }
 
+EMERGENCY_CLOSING_PRO = (
+    "In conclusion, our PRO position has been demonstrated through consistent reasoning "
+    "across every phase of this debate. Our opponent's arguments relied on speculation and "
+    "selective framing, while ours were grounded in logical structure and coherent evidence. "
+    "The burden of proof favored our position from the start, and nothing in this debate "
+    "has shifted that. We stand firm: the resolution holds, and the judge should affirm."
+)
+
+EMERGENCY_CLOSING_CON = (
+    "In conclusion, our CON position has dismantled the case for the resolution at every "
+    "turn. Our opponent failed to meet their burden of proof — they could not demonstrate "
+    "that the proposed change is necessary, beneficial, or feasible. The status quo "
+    "arguments we advanced remain unanswered. The judge should reject the resolution and "
+    "affirm the CON."
+)
+
 
 class DebateEngine:
 
@@ -61,14 +77,15 @@ class DebateEngine:
         self.total_output_tokens = 0
 
     def generate_argument(self, state: MatchState) -> str:
+        """Full argument generation: uses web_search tool. For normal/fast call_mode."""
         system_prompt, user_prompt = build_prompt(state)
 
         last_error = None
         for attempt in range(3):
             try:
                 logger.info(
-                    "Generating argument attempt %d, phase=%s",
-                    attempt + 1, state.debate_phase,
+                    "Generating argument attempt %d, phase=%s, call_mode=%s",
+                    attempt + 1, state.debate_phase, state.call_mode,
                 )
                 start_time = time.time()
 
@@ -120,6 +137,132 @@ class DebateEngine:
             last_error,
         )
         return self._get_fallback(state.debate_phase)
+
+    def generate_caution_argument(self, state: MatchState) -> str:
+        """
+        Caution mode: NO web search tool — pure reasoning from conversation context.
+        Faster and cheaper. Used when time is 120-240s or avg response > 45s.
+        """
+        system_prompt, user_prompt = build_prompt(state)
+
+        # Append a note telling Claude to reason from context only
+        user_prompt += (
+            "\n\nIMPORTANT: You are in CAUTION mode due to time constraints. "
+            "Do NOT attempt web searches. Argue from logical reasoning, "
+            "the conversation history above, and well-known principles. "
+            "Cite general knowledge only (e.g., 'According to established economic theory...'). "
+            "Prioritize SPEED — respond in under 20 seconds."
+        )
+
+        last_error = None
+        for attempt in range(2):  # Only 2 attempts in caution mode
+            try:
+                logger.info(
+                    "CAUTION mode argument attempt %d, phase=%s",
+                    attempt + 1, state.debate_phase,
+                )
+                start_time = time.time()
+
+                # No tools parameter — pure text generation
+                response = self.client.messages.create(
+                    model=MODEL,
+                    max_tokens=MAX_TOKENS,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+
+                elapsed = time.time() - start_time
+                logger.info("CAUTION API responded in %.1fs", elapsed)
+
+                self.call_count += 1
+                if response.usage:
+                    self.total_input_tokens += response.usage.input_tokens
+                    self.total_output_tokens += response.usage.output_tokens
+
+                text = self._extract_text(response)
+                if not text:
+                    raise ValueError("Empty response from API")
+
+                text = self._strip_markdown(text)
+                text = self._trim_to_limit(text)
+                logger.info("CAUTION argument ready: %d chars", len(text))
+                return text
+
+            except Exception as e:
+                last_error = e
+                logger.error("CAUTION attempt %d failed: %s", attempt + 1, str(e))
+                if attempt < 1:
+                    time.sleep(1)
+
+        logger.critical("CAUTION mode failed. Using fallback. Last error: %s", last_error)
+        return self._get_fallback(state.debate_phase)
+
+    def generate_emergency_argument(self, state: MatchState) -> str:
+        """
+        Emergency mode: synthesis-only prompt, very short, instant.
+        Used when time is 60-120s or avg response > 60s.
+        No API tools, minimal prompt, targets <10s response.
+        """
+        opponent_msg = state.last_opponent_message() or "They made an argument."
+        our_stance = state.our_stance
+        topic = state.topic or "the topic"
+        phase = state.debate_phase
+
+        # Determine emergency closing text
+        if phase == "closing":
+            closing = EMERGENCY_CLOSING_PRO if our_stance == "PRO" else EMERGENCY_CLOSING_CON
+            logger.warning("EMERGENCY closing fired for stance=%s", our_stance)
+            return closing
+
+        # Synthesize from last 3 of our own messages
+        our_messages = [
+            msg["message"] for msg in state.conversation
+            if msg["is_ours"]
+        ][-3:]
+        our_context = " ".join(our_messages)[:600] if our_messages else "We have argued our position clearly."
+
+        emergency_prompt = (
+            f"You are a debate agent arguing {our_stance} on: '{topic}'.\n"
+            f"Time is critically short. Write ONE punchy paragraph (under 400 chars) that:\n"
+            f"1. Rebuts this opponent claim: '{opponent_msg[:200]}'\n"
+            f"2. Reinforces our core position using: '{our_context[:300]}'\n"
+            f"No sources needed. Plain text. Assertive tone. Under 400 characters. Output ONLY the argument."
+        )
+
+        try:
+            logger.warning(
+                "EMERGENCY mode argument, phase=%s, remaining=%ds",
+                phase, state.seconds_remaining_in_match,
+            )
+            start_time = time.time()
+
+            response = self.client.messages.create(
+                model=MODEL,
+                max_tokens=300,  # Force short output
+                system="You are a competitive debate agent. Respond concisely and assertively.",
+                messages=[{"role": "user", "content": emergency_prompt}],
+            )
+
+            elapsed = time.time() - start_time
+            logger.warning("EMERGENCY API responded in %.1fs", elapsed)
+
+            self.call_count += 1
+            if response.usage:
+                self.total_input_tokens += response.usage.input_tokens
+                self.total_output_tokens += response.usage.output_tokens
+
+            text = self._extract_text(response)
+            if not text:
+                return self._get_fallback(state.debate_phase)
+
+            text = self._strip_markdown(text)
+            text = self._trim_to_limit(text)
+            logger.warning("EMERGENCY argument ready: %d chars", len(text))
+            return text
+
+        except Exception as e:
+            logger.critical("EMERGENCY mode API failed: %s — using hardcoded fallback", e)
+            return self._get_fallback(state.debate_phase)
 
     def _extract_text(self, response) -> str:
         text_parts = []
