@@ -30,6 +30,7 @@ class WSClient:
         self._turn_in_progress = False
         self._current_turn_id = ""
         self._last_sent_message = ""
+        self._research_done = False
 
     async def connect(self) -> None:
         while self.running:
@@ -151,9 +152,10 @@ class WSClient:
 
         # One-time research: fires when topic first arrives at match start
         if (self.state.topic
-                and not self.state.research_data
+                and not self._research_done
                 and self.state.status == "started"
                 and self.engine.use_web_search):
+            self._research_done = True
             logger.info("Topic received — running one-time research call...")
             self.state.research_data = await asyncio.to_thread(
                 self.engine.research_topic,
