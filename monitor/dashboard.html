@@ -1133,10 +1133,9 @@ function injectOpponentMessage() {
     return;
   }
 
+  // FIX: sandbox server only accepts "sandbox-message" type, not "debate-message"
   const payload = {
-    type: "debate-message",
-    from: OPPONENT_NAME,
-    timestamp: String(Date.now()),
+    type: "sandbox-message",
     data: { message: msg },
   };
 
