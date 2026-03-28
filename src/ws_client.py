@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 
 import websockets
 import websockets.exceptions
@@ -24,43 +25,10 @@ class WSClient:
         self.running = True
         self.reconnect_attempts = 0
         self.last_disconnect_time = 0.0
-
-        # ---------------------------------------------------------------
-        # sandbox FLAG — WHY THIS EXISTS:
-        #
-        # The sandbox endpoint uses a DIFFERENT message type than live match.
-        # Live match:  { "type": "debate-message", "data": { "message": "..." } }
-        # Sandbox:     { "type": "sandbox-message", "data": { "message": "..." } }
-        #
-        # Sending "debate-message" to the sandbox endpoint returns:
-        #   "Invalid format. Send JSON: { 'type': 'sandbox-message', ... }"
-        # This flag is set from agent.py via --sandbox CLI arg and switches
-        # the outgoing message type accordingly in take_turn().
-        # Reference: User Manual section 6.4 (sandbox-message type).
-        # ---------------------------------------------------------------
         self.sandbox = sandbox
-
-        # ---------------------------------------------------------------
-        # _turn_in_progress FLAG — WHY THIS EXISTS:
-        #
-        # The competition server sends TWO signals when it becomes our turn:
-        #   1. A `debate-message` (opponent's argument) — we detect the turn
-        #      change and call take_turn() immediately.
-        #   2. A `match-state` update (turn = our_team) — arrives milliseconds
-        #      later and calls take_turn() a SECOND time.
-        #
-        # Without this flag, the agent would generate and send TWO arguments
-        # per turn. The first sends fine; the second gets rejected by the
-        # server with "It's not your turn!" because we already sent and the
-        # server has switched the turn back to the opponent.
-        #
-        # Fix: set this flag to True the moment we START generating an argument.
-        # Any subsequent take_turn() call checks this flag first and exits
-        # immediately if a turn is already being processed.
-        # The flag is reset to False after send completes so the next turn
-        # starts clean.
-        # ---------------------------------------------------------------
         self._turn_in_progress = False
+        self._current_turn_id = ""
+        self._last_sent_message = ""
 
     async def connect(self) -> None:
         while self.running:
@@ -84,7 +52,6 @@ class WSClient:
                 await self.handle_reconnect()
 
     async def authenticate(self) -> None:
-        """Send login credentials immediately after connecting, if provided."""
         if not TEAM_EMAIL or not TEAM_PASSWORD:
             logger.info("No TEAM_EMAIL/TEAM_PASSWORD set — skipping auth handshake")
             return
@@ -143,15 +110,10 @@ class WSClient:
                     await self.handle_debate_message(parsed)
 
                 elif msg_type == "sandbox-message":
-                    # Sandbox echo — server reflects our message back.
-                    # Treat it like a debate-message from the opponent for
-                    # testing purposes so the agent generates a response.
                     logger.info("Sandbox echo: %s", data.get("message", "")[:100])
 
                 elif msg_type == "match-paused":
                     self.state.status = "paused"
-                    # Reset flag on pause so we don't get stuck if a turn
-                    # was mid-flight when the match was paused.
                     self._turn_in_progress = False
                     logger.info("Match paused")
 
@@ -204,18 +166,12 @@ class WSClient:
             self.state.record_opponent_message(team, message, timestamp)
             logger.info("Opponent argued: %s...", message[:100])
 
-            # Trigger our turn immediately on receiving opponent's message.
-            # Some servers update match-state.turn separately; others rely solely
-            # on debate-message to signal it is our turn. We update the turn field
-            # here so is_our_turn evaluates correctly, then attempt to send.
             if self.state.status == "started":
                 other_team = (
                     self.state.team2
                     if team == self.state.team1
                     else self.state.team1
                 )
-                # Optimistically set turn to us (will be confirmed/overridden by
-                # the next match-state broadcast from the server).
                 self.state.turn = other_team if other_team == self.state.our_team else self.state.our_team
                 if self.state.turn == self.state.our_team:
                     self.state.turn_start_time = time.time()
@@ -245,34 +201,37 @@ class WSClient:
             logger.debug("take_turn called but not our turn, skipping")
             return
 
-        # DOUBLE-TRIGGER GUARD:
-        # Both `debate-message` and the following `match-state` can call
-        # take_turn() within milliseconds of each other for the same turn.
-        # This flag ensures only the FIRST call proceeds; the second is
-        # dropped immediately. The flag is cleared after send completes
-        # so the next turn starts fresh.
+        if self.state.status != "started" and not self.sandbox:
+            logger.debug("take_turn called but match status is %s, skipping", self.state.status)
+            return
+
+        turn_id = str(uuid.uuid4())[:8]
+
         if self._turn_in_progress:
-            logger.debug("Turn already in progress — skipping duplicate trigger")
+            logger.debug("Turn already in progress (%s) — skipping duplicate trigger", self._current_turn_id)
             return
         self._turn_in_progress = True
+        self._current_turn_id = turn_id
 
         if self.state.seconds_on_our_turn > 85:
             logger.warning(
                 "Turn time exceeded 85s (%.1fs), skipping to avoid late send",
                 self.state.seconds_on_our_turn,
             )
-            # Reset flag since we are not actually sending
             self._turn_in_progress = False
             return
 
         try:
             argument = self.engine.generate_argument(self.state)
 
-            # SANDBOX vs LIVE message type:
-            # Sandbox endpoint requires "sandbox-message" type.
-            # Live match endpoint requires "debate-message" type.
-            # Sending the wrong type causes an "Invalid format" server error.
-            # Reference: User Manual section 6.4.
+            if argument == self._last_sent_message:
+                logger.warning("Duplicate message detected, regenerating")
+                argument = self.engine.generate_argument(self.state)
+
+            if self.state.status != "started" and not self.sandbox:
+                logger.warning("Match state changed during generation (now %s), aborting send", self.state.status)
+                return
+
             msg_type = "sandbox-message" if self.sandbox else "debate-message"
 
             payload = {
@@ -281,14 +240,13 @@ class WSClient:
             }
             await self.send_json(payload)
 
+            self._last_sent_message = argument
             self.state.record_our_message(argument)
-            logger.info("Sent argument [%s]: %d chars", msg_type, len(argument))
+            logger.info("Sent argument [%s] turn=%s: %d chars", msg_type, turn_id, len(argument))
 
         except Exception as e:
             logger.error("Failed to send argument: %s", e)
         finally:
-            # Always reset the flag after the turn attempt completes
-            # (success or failure) so the next turn is never blocked.
             self._turn_in_progress = False
 
     async def send_json(self, payload: dict) -> None:

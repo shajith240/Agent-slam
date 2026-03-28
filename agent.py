@@ -29,17 +29,21 @@ from src.ws_client import WSClient
 
 
 def check_environment() -> bool:
+    ok = True
+
     if not ANTHROPIC_API_KEY:
         logger.error("ANTHROPIC_API_KEY is not set in .env")
-        return False
-    logger.info("API key loaded")
+        ok = False
+    else:
+        logger.info("API key loaded (%s...%s)", ANTHROPIC_API_KEY[:4], ANTHROPIC_API_KEY[-4:])
 
     if not TEAM_NAME:
         logger.error("TEAM_NAME is not set in .env")
-        return False
-    logger.info("Team name: %s", TEAM_NAME)
+        ok = False
+    else:
+        logger.info("Team name: %s", TEAM_NAME)
 
-    return True
+    return ok
 
 
 async def main() -> None:
@@ -71,10 +75,6 @@ async def main() -> None:
     state = MatchState()
     state.our_team = TEAM_NAME
     engine = DebateEngine()
-
-    # Pass sandbox=True so WSClient sends "sandbox-message" type instead of
-    # "debate-message" — the sandbox endpoint requires this different type.
-    # Reference: User Manual section 6.4 (sandbox-message format).
     client = WSClient(ws_url, state, engine, sandbox=sandbox)
 
     try:
@@ -82,11 +82,9 @@ async def main() -> None:
     except KeyboardInterrupt:
         logger.info("Interrupted by user — shutting down")
         client.stop()
-        raise Exception(f"Interrupted by user handshake revoked")
     except Exception as e:
         logger.critical("Unhandled exception: %s", e)
         client.stop()
-        raise Exception(f"During handling of previous error this error has occured {e}")
     finally:
         logger.info(engine.usage_summary())
         logger.info("Agent shut down cleanly")

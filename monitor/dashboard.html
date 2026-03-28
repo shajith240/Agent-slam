@@ -122,6 +122,31 @@ html, body {
   text-shadow: 0 0 15px rgba(0, 245, 255, 0.4);
   letter-spacing: 2px;
 }
+.top-bar-center {
+  display: flex; align-items: center; gap: 16px;
+}
+.tab-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn:hover { border-color: var(--cyan); color: var(--text-primary); }
+.tab-btn.active {
+  background: rgba(0, 245, 255, 0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.top-bar-right {
+  display: flex; align-items: center; gap: 16px;
+}
 .status-badge {
   padding: 6px 20px;
   border-radius: 20px;
@@ -159,7 +184,11 @@ html, body {
 }
 .timer.warning { color: var(--pink); animation: timerShake 10s infinite; }
 
-/* MIDDLE SECTION */
+/* ========== TAB CONTENT ========== */
+.tab-content { display: none; flex: 1; min-height: 0; overflow: hidden; flex-direction: column; }
+.tab-content.active { display: flex; }
+
+/* ========== MATCH TAB ========== */
 .middle {
   display: flex;
   flex: 1;
@@ -294,9 +323,9 @@ html, body {
 .last-arg.pink-tint { border-color: rgba(255, 51, 102, 0.15); }
 
 /* SCROLLBAR */
-.last-arg::-webkit-scrollbar, .feed::-webkit-scrollbar { width: 4px; }
-.last-arg::-webkit-scrollbar-track, .feed::-webkit-scrollbar-track { background: transparent; }
-.last-arg::-webkit-scrollbar-thumb, .feed::-webkit-scrollbar-thumb {
+.last-arg::-webkit-scrollbar, .feed::-webkit-scrollbar, .monitor-log::-webkit-scrollbar { width: 4px; }
+.last-arg::-webkit-scrollbar-track, .feed::-webkit-scrollbar-track, .monitor-log::-webkit-scrollbar-track { background: transparent; }
+.last-arg::-webkit-scrollbar-thumb, .feed::-webkit-scrollbar-thumb, .monitor-log::-webkit-scrollbar-thumb {
   background: var(--border); border-radius: 2px;
 }
 
@@ -364,6 +393,127 @@ html, body {
 }
 .feed-msg.ours .sender { color: var(--cyan); }
 .feed-msg.opponent .sender { color: var(--pink); }
+
+/* ========== MONITOR TAB ========== */
+.monitor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  padding: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.monitor-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.monitor-card h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.monitor-card.span-full { grid-column: 1 / -1; }
+.monitor-card.span-2 { grid-column: span 2; }
+
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.health-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.health-dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(0, 255, 136, 0.4); }
+.health-dot.warn { background: var(--warning); box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
+.health-dot.error { background: var(--pink); box-shadow: 0 0 8px rgba(255, 51, 102, 0.4); }
+.health-dot.unknown { background: var(--neutral); }
+.health-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.health-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(30, 30, 46, 0.3);
+}
+.metric-row .metric-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.monitor-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(30, 30, 46, 0.2);
+}
+.log-entry .log-time { color: var(--text-secondary); margin-right: 8px; }
+.log-entry.log-info { color: var(--text-primary); }
+.log-entry.log-warn { color: var(--warning); }
+.log-entry.log-error { color: var(--pink); }
+.log-entry.log-success { color: var(--success); }
+
+.timeline-bar {
+  display: flex;
+  gap: 2px;
+  height: 24px;
+  align-items: flex-end;
+  margin-top: 8px;
+}
+.timeline-tick {
+  flex: 1;
+  background: var(--border);
+  border-radius: 2px;
+  min-height: 4px;
+  transition: height 0.3s, background 0.3s;
+}
+.timeline-tick.ours { background: var(--cyan); }
+.timeline-tick.theirs { background: var(--pink); }
 
 /* BOTTOM BAR */
 .bottom-bar {
@@ -525,7 +675,7 @@ html, body {
 <div id="setup-screen">
   <div class="setup-card">
     <h1>AGENT SLAM 2026</h1>
-    <p>Match Monitor — Read-Only Observer</p>
+    <p>Match Monitor — Real-Time Observer</p>
     <label for="ws-url-input">WebSocket URL</label>
     <input type="text" id="ws-url-input" placeholder="wss://server.example.com/ws">
     <label for="team-input">Your Team Name</label>
@@ -539,41 +689,113 @@ html, body {
   <!-- TOP BAR -->
   <div class="top-bar">
     <div class="logo">AGENT SLAM 2026</div>
-    <div class="status-badge" id="status-badge">WAITING</div>
-    <div class="timer" id="timer">--:--</div>
+    <div class="top-bar-center">
+      <button class="tab-btn active" data-tab="match-tab">Match</button>
+      <button class="tab-btn" data-tab="monitor-tab">Monitor</button>
+      <div class="status-badge" id="status-badge">WAITING</div>
+    </div>
+    <div class="top-bar-right">
+      <div class="timer" id="timer">--:--</div>
+    </div>
   </div>
 
-  <!-- MIDDLE -->
-  <div class="middle">
-    <!-- LEFT: OUR AGENT -->
-    <div class="panel panel-left" id="panel-left">
-      <div class="team-name cyan" id="our-team-name">--</div>
-      <div><span class="stance-badge" id="our-stance">--</span></div>
-      <div class="turn-indicator" id="our-turn-ind">WAITING</div>
-      <div class="stat-row"><span>Messages sent</span><span class="val" id="our-msg-count">0</span></div>
-      <div class="stat-row"><span>Phase</span><span class="val"><span class="phase-badge" id="phase-badge">--</span></span></div>
-      <div class="stat-row"><span>Tokens used</span><span class="val" id="tokens-used">0</span></div>
-      <div class="stat-row"><span>Est. cost</span><span class="val" id="est-cost">₹0.00</span></div>
-      <div class="last-arg-label">Last Argument Sent</div>
-      <div class="last-arg cyan-tint" id="our-last-arg">Waiting for match to begin...</div>
-    </div>
+  <!-- MATCH TAB -->
+  <div class="tab-content active" id="match-tab">
+    <div class="middle">
+      <!-- LEFT: OUR AGENT -->
+      <div class="panel panel-left" id="panel-left">
+        <div class="team-name cyan" id="our-team-name">--</div>
+        <div><span class="stance-badge" id="our-stance">--</span></div>
+        <div class="turn-indicator" id="our-turn-ind">WAITING</div>
+        <div class="stat-row"><span>Messages sent</span><span class="val" id="our-msg-count">0</span></div>
+        <div class="stat-row"><span>Phase</span><span class="val"><span class="phase-badge" id="phase-badge">--</span></span></div>
+        <div class="stat-row"><span>Tokens used</span><span class="val" id="tokens-used">0</span></div>
+        <div class="stat-row"><span>Est. cost</span><span class="val" id="est-cost">$0.00</span></div>
+        <div class="last-arg-label">Last Argument Sent</div>
+        <div class="last-arg cyan-tint" id="our-last-arg">Waiting for match to begin...</div>
+      </div>
 
-    <!-- CENTER: FEED -->
-    <div class="panel panel-center">
-      <div class="feed-header">Match Feed</div>
-      <div class="feed" id="feed"></div>
-    </div>
+      <!-- CENTER: FEED -->
+      <div class="panel panel-center">
+        <div class="feed-header">Match Feed</div>
+        <div class="feed" id="feed"></div>
+      </div>
 
-    <!-- RIGHT: OPPONENT -->
-    <div class="panel panel-right" id="panel-right">
-      <div class="team-name pink" id="opp-team-name">--</div>
-      <div><span class="stance-badge" id="opp-stance">--</span></div>
-      <div class="turn-indicator" id="opp-turn-ind">WAITING</div>
-      <div class="stat-row"><span>Messages sent</span><span class="val" id="opp-msg-count">0</span></div>
-      <div class="stat-row"><span>Last message</span><span class="val" id="opp-msg-len">--</span></div>
-      <div class="stat-row"><span>Connection</span><span class="val" id="opp-conn">--</span></div>
-      <div class="last-arg-label">Last Opponent Argument</div>
-      <div class="last-arg pink-tint" id="opp-last-arg">Waiting for opponent...</div>
+      <!-- RIGHT: OPPONENT -->
+      <div class="panel panel-right" id="panel-right">
+        <div class="team-name pink" id="opp-team-name">--</div>
+        <div><span class="stance-badge" id="opp-stance">--</span></div>
+        <div class="turn-indicator" id="opp-turn-ind">WAITING</div>
+        <div class="stat-row"><span>Messages sent</span><span class="val" id="opp-msg-count">0</span></div>
+        <div class="stat-row"><span>Last message</span><span class="val" id="opp-msg-len">--</span></div>
+        <div class="stat-row"><span>Connection</span><span class="val" id="opp-conn">--</span></div>
+        <div class="last-arg-label">Last Opponent Argument</div>
+        <div class="last-arg pink-tint" id="opp-last-arg">Waiting for opponent...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONITOR TAB -->
+  <div class="tab-content" id="monitor-tab">
+    <div class="monitor-grid">
+      <!-- HEALTH STATUS -->
+      <div class="monitor-card">
+        <h3>System Health</h3>
+        <div class="health-grid">
+          <div class="health-item">
+            <div class="health-dot unknown" id="health-ws"></div>
+            <span class="health-label">WebSocket</span>
+            <span class="health-val" id="health-ws-val">--</span>
+          </div>
+          <div class="health-item">
+            <div class="health-dot unknown" id="health-api"></div>
+            <span class="health-label">API</span>
+            <span class="health-val" id="health-api-val">--</span>
+          </div>
+          <div class="health-item">
+            <div class="health-dot unknown" id="health-turn"></div>
+            <span class="health-label">Turn Exec</span>
+            <span class="health-val" id="health-turn-val">--</span>
+          </div>
+          <div class="health-item">
+            <div class="health-dot unknown" id="health-match"></div>
+            <span class="health-label">Match</span>
+            <span class="health-val" id="health-match-val">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMING METRICS -->
+      <div class="monitor-card">
+        <h3>Timing Metrics</h3>
+        <div class="metric-row"><span>Avg response time</span><span class="metric-val" id="m-avg-resp">--</span></div>
+        <div class="metric-row"><span>Last response time</span><span class="metric-val" id="m-last-resp">--</span></div>
+        <div class="metric-row"><span>Time on current turn</span><span class="metric-val" id="m-turn-time">--</span></div>
+        <div class="metric-row"><span>Reconnect count</span><span class="metric-val" id="m-reconnects">0</span></div>
+        <div class="metric-row"><span>Messages dropped</span><span class="metric-val" id="m-drops">0</span></div>
+      </div>
+
+      <!-- MESSAGE QUALITY -->
+      <div class="monitor-card">
+        <h3>Message Quality</h3>
+        <div class="metric-row"><span>Avg char count (ours)</span><span class="metric-val" id="m-avg-chars">--</span></div>
+        <div class="metric-row"><span>Last char count</span><span class="metric-val" id="m-last-chars">--</span></div>
+        <div class="metric-row"><span>Over-limit trims</span><span class="metric-val" id="m-trims">0</span></div>
+        <div class="metric-row"><span>Fallbacks used</span><span class="metric-val" id="m-fallbacks">0</span></div>
+        <div class="metric-row"><span>Unique sources cited</span><span class="metric-val" id="m-sources">0</span></div>
+      </div>
+
+      <!-- MESSAGE TIMELINE -->
+      <div class="monitor-card span-full">
+        <h3>Message Timeline</h3>
+        <div class="timeline-bar" id="timeline-bar"></div>
+      </div>
+
+      <!-- EVENT LOG -->
+      <div class="monitor-card span-full" style="min-height: 200px;">
+        <h3>Live Event Log</h3>
+        <div class="monitor-log" id="monitor-log"></div>
+      </div>
     </div>
   </div>
 
@@ -632,19 +854,175 @@ const state = {
   connected: false, lastPhase: "",
 };
 
+// Monitor state
+const monitor = {
+  responseTimes: [],
+  lastTurnStart: 0,
+  reconnectCount: 0,
+  droppedMessages: 0,
+  trimCount: 0,
+  fallbackCount: 0,
+  ourCharCounts: [],
+  citedSources: new Set(),
+  events: [],
+};
+
 let ws = null;
 let timerInterval = null;
+let turnTimerInterval = null;
 
 // ===== DOM refs =====
 const $ = (id) => document.getElementById(id);
 
 // ===== TEAM MATCHING (case-insensitive) =====
-// FIX: All team comparisons use this helper.
-// Root cause of reversed alignment: server sends "team2" but user may type
-// "Team2" in the setup screen, causing isOurs to always be false.
 function isSameTeam(a, b) {
   if (!a || !b) return false;
   return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+// ===== TAB SWITCHING =====
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    $(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ===== MONITOR LOGGING =====
+function monitorLog(level, msg) {
+  const time = new Date().toLocaleTimeString("en-US", { hour12: false });
+  const entry = { time, level, msg };
+  monitor.events.push(entry);
+  if (monitor.events.length > 200) monitor.events.shift();
+
+  const log = $("monitor-log");
+  if (!log) return;
+  const div = document.createElement("div");
+  div.className = "log-entry log-" + level;
+  div.innerHTML = '<span class="log-time">' + time + '</span>' + msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ===== MONITOR UPDATE =====
+function updateMonitor() {
+  // Health indicators
+  const wsDot = $("health-ws");
+  const wsVal = $("health-ws-val");
+  if (state.connected) {
+    wsDot.className = "health-dot ok";
+    wsVal.textContent = "Connected";
+  } else {
+    wsDot.className = "health-dot error";
+    wsVal.textContent = "Disconnected";
+  }
+
+  const matchDot = $("health-match");
+  const matchVal = $("health-match-val");
+  if (state.status === "started") {
+    matchDot.className = "health-dot ok";
+    matchVal.textContent = "Live";
+  } else if (state.status === "paused") {
+    matchDot.className = "health-dot warn";
+    matchVal.textContent = "Paused";
+  } else if (state.status === "completed") {
+    matchDot.className = "health-dot ok";
+    matchVal.textContent = "Finished";
+  } else {
+    matchDot.className = "health-dot unknown";
+    matchVal.textContent = "Waiting";
+  }
+
+  // Timing
+  const avgResp = monitor.responseTimes.length > 0
+    ? (monitor.responseTimes.reduce((a, b) => a + b, 0) / monitor.responseTimes.length).toFixed(1) + "s"
+    : "--";
+  $("m-avg-resp").textContent = avgResp;
+
+  const lastResp = monitor.responseTimes.length > 0
+    ? monitor.responseTimes[monitor.responseTimes.length - 1].toFixed(1) + "s"
+    : "--";
+  $("m-last-resp").textContent = lastResp;
+
+  $("m-reconnects").textContent = monitor.reconnectCount;
+  $("m-drops").textContent = monitor.droppedMessages;
+
+  // Quality
+  const avgChars = monitor.ourCharCounts.length > 0
+    ? Math.round(monitor.ourCharCounts.reduce((a, b) => a + b, 0) / monitor.ourCharCounts.length)
+    : "--";
+  $("m-avg-chars").textContent = avgChars;
+
+  const lastChars = monitor.ourCharCounts.length > 0
+    ? monitor.ourCharCounts[monitor.ourCharCounts.length - 1]
+    : "--";
+  $("m-last-chars").textContent = lastChars;
+
+  $("m-trims").textContent = monitor.trimCount;
+  $("m-fallbacks").textContent = monitor.fallbackCount;
+  $("m-sources").textContent = monitor.citedSources.size;
+
+  // API health
+  const apiDot = $("health-api");
+  const apiVal = $("health-api-val");
+  if (monitor.fallbackCount > 0) {
+    apiDot.className = "health-dot warn";
+    apiVal.textContent = monitor.fallbackCount + " fallback(s)";
+  } else if (state.messageCount > 0) {
+    apiDot.className = "health-dot ok";
+    apiVal.textContent = "OK";
+  } else {
+    apiDot.className = "health-dot unknown";
+    apiVal.textContent = "--";
+  }
+
+  // Turn execution health
+  const turnDot = $("health-turn");
+  const turnVal = $("health-turn-val");
+  if (monitor.responseTimes.length > 0) {
+    const last = monitor.responseTimes[monitor.responseTimes.length - 1];
+    if (last > 60) {
+      turnDot.className = "health-dot error";
+      turnVal.textContent = "Slow (" + last.toFixed(0) + "s)";
+    } else if (last > 30) {
+      turnDot.className = "health-dot warn";
+      turnVal.textContent = last.toFixed(1) + "s";
+    } else {
+      turnDot.className = "health-dot ok";
+      turnVal.textContent = last.toFixed(1) + "s";
+    }
+  } else {
+    turnDot.className = "health-dot unknown";
+    turnVal.textContent = "--";
+  }
+
+  // Timeline
+  updateTimeline();
+}
+
+function updateTimeline() {
+  const bar = $("timeline-bar");
+  bar.innerHTML = "";
+  const maxMsgs = Math.max(state.conversation.length, 10);
+  for (let i = 0; i < maxMsgs; i++) {
+    const tick = document.createElement("div");
+    tick.className = "timeline-tick";
+    if (i < state.conversation.length) {
+      const msg = state.conversation[i];
+      tick.classList.add(msg.isOurs ? "ours" : "theirs");
+      const charLen = (msg.message || "").length;
+      const height = Math.max(4, Math.min(24, Math.round(charLen / 3000 * 24)));
+      tick.style.height = height + "px";
+    }
+    bar.appendChild(tick);
+  }
+}
+
+function extractSources(text) {
+  const urls = text.match(/https?:\/\/[^\s\)]+/g) || [];
+  urls.forEach(u => monitor.citedSources.add(u));
 }
 
 // ===== SETUP =====
@@ -679,24 +1057,34 @@ function connectWS() {
     updateConnStatus(true);
     $("disconnect-overlay").classList.remove("active");
     addSystemMsg("Connected to match server");
+    monitorLog("success", "WebSocket connected to " + CONFIG.WS_URL);
+    updateMonitor();
   };
 
   ws.onclose = () => {
     state.connected = false;
     updateConnStatus(false);
+    monitorLog("error", "WebSocket disconnected");
     if (state.status !== "completed") {
+      monitor.reconnectCount++;
       $("disconnect-overlay").classList.add("active");
+      monitorLog("warn", "Reconnecting in 3s (attempt " + monitor.reconnectCount + ")");
       setTimeout(connectWS, 3000);
     }
+    updateMonitor();
   };
 
-  ws.onerror = () => {};
+  ws.onerror = () => {
+    monitorLog("error", "WebSocket error occurred");
+  };
 
   ws.onmessage = (event) => {
     try {
       const parsed = JSON.parse(event.data);
       handleMessage(parsed);
-    } catch (e) {}
+    } catch (e) {
+      monitorLog("error", "Failed to parse message: " + e.message);
+    }
   };
 }
 
@@ -708,12 +1096,15 @@ function handleMessage(parsed) {
   switch (type) {
     case "welcome":
       addSystemMsg(data.message || "Welcome");
+      monitorLog("info", "Server welcome: " + (data.message || ""));
       break;
     case "match-state":
       handleMatchState(data);
+      monitorLog("info", "Match state: turn=" + (data.turn || "--") + " status=" + (data.status || "--"));
       break;
     case "match-update":
       handleMatchUpdate(data);
+      monitorLog("success", "Match started");
       break;
     case "debate-message":
       handleDebateMessage(parsed);
@@ -722,23 +1113,30 @@ function handleMessage(parsed) {
       state.status = "paused";
       updateStatusBadge();
       addSystemMsg("Match paused");
+      monitorLog("warn", "Match paused by server");
       break;
     case "match-resumed":
       handleMatchResumed(data);
+      monitorLog("success", "Match resumed");
       break;
     case "match-finish":
       handleMatchFinish();
+      monitorLog("success", "Match finished");
       break;
     case "previous-message":
       handlePreviousMessages(data);
+      monitorLog("info", "Loaded previous messages");
       break;
     case "error":
       addSystemMsg("Error: " + (data.message || "Unknown"));
+      monitorLog("error", "Server error: " + (data.message || "Unknown"));
       break;
     case "info":
       addSystemMsg(data.message || "Info");
+      monitorLog("info", "Server: " + (data.message || ""));
       break;
   }
+  updateMonitor();
 }
 
 // ===== HANDLERS =====
@@ -753,6 +1151,12 @@ function handleMatchState(data) {
   state.cons = data.cons || state.cons;
   state.turn = data.turn || state.turn;
   state.status = data.status || state.status;
+
+  const isOurTurn = isSameTeam(state.turn, state.ourTeam);
+  if (isOurTurn && state.status === "started") {
+    monitor.lastTurnStart = Date.now();
+  }
+
   updateAll();
 }
 
@@ -768,7 +1172,6 @@ function handleDebateMessage(parsed) {
   const team = parsed.from;
   const msg = (parsed.data || {}).message || "";
   const ts = parsed.timestamp || "";
-  // FIX: was `team === state.ourTeam` — strict equality failed on casing mismatch
   const isOurs = isSameTeam(team, state.ourTeam);
 
   state.conversation.push({ team, message: msg, timestamp: ts, isOurs });
@@ -776,10 +1179,22 @@ function handleDebateMessage(parsed) {
   if (isOurs) {
     state.messageCount++;
     $("our-last-arg").textContent = msg;
+    monitor.ourCharCounts.push(msg.length);
+    extractSources(msg);
+    monitorLog("success", "Our argument sent: " + msg.length + " chars (phase: " + getPhase() + ")");
+
+    if (monitor.lastTurnStart > 0) {
+      const elapsed = (Date.now() - monitor.lastTurnStart) / 1000;
+      monitor.responseTimes.push(elapsed);
+      monitorLog("info", "Response time: " + elapsed.toFixed(1) + "s");
+      monitor.lastTurnStart = 0;
+    }
   } else {
     state.oppMessageCount++;
     $("opp-last-arg").textContent = msg;
     $("opp-msg-len").textContent = msg.length + " chars";
+    monitorLog("info", "Opponent argued: " + msg.length + " chars");
+    monitor.lastTurnStart = Date.now();
   }
 
   addChatMsg(msg, isOurs, team);
@@ -800,20 +1215,18 @@ function handleMatchFinish() {
   if (timerInterval) clearInterval(timerInterval);
 
   const stats = $("final-stats");
-  stats.innerHTML = `
-    <p>Topic: <span>${state.topic}</span></p>
-    <p>Our team: <span>${state.ourTeam}</span> (${getOurStance()})</p>
-    <p>Messages sent: <span>${state.messageCount}</span></p>
-    <p>Opponent messages: <span>${state.oppMessageCount}</span></p>
-    <p>Total exchanges: <span>${state.conversation.length}</span></p>
-  `;
+  stats.innerHTML =
+    '<p>Topic: <span>' + state.topic + '</span></p>' +
+    '<p>Our team: <span>' + state.ourTeam + '</span> (' + getOurStance() + ')</p>' +
+    '<p>Messages sent: <span>' + state.messageCount + '</span></p>' +
+    '<p>Opponent messages: <span>' + state.oppMessageCount + '</span></p>' +
+    '<p>Total exchanges: <span>' + state.conversation.length + '</span></p>';
   $("finish-overlay").classList.add("active");
 }
 
 function handlePreviousMessages(data) {
   const convs = data.conversations || [];
   convs.forEach((entry) => {
-    // FIX: was `entry.team === state.ourTeam`
     const isOurs = isSameTeam(entry.team, state.ourTeam);
     state.conversation.push({
       team: entry.team || "",
@@ -821,7 +1234,11 @@ function handlePreviousMessages(data) {
       timestamp: entry.timestamp || "",
       isOurs,
     });
-    if (isOurs) state.messageCount++;
+    if (isOurs) {
+      state.messageCount++;
+      monitor.ourCharCounts.push((entry.message || "").length);
+      extractSources(entry.message || "");
+    }
     else state.oppMessageCount++;
     addChatMsg(entry.message || "", isOurs, entry.team || "");
   });
@@ -838,6 +1255,7 @@ function updateAll() {
   updateStats();
   updatePhaseTrack();
   $("round-name").textContent = state.round || "--";
+  updateMonitor();
 }
 
 function updateTeams() {
@@ -876,7 +1294,6 @@ function updateStatusBadge() {
 }
 
 function updateTurnIndicators() {
-  // FIX: was `state.turn === state.ourTeam` — strict equality
   const isOurTurn = isSameTeam(state.turn, state.ourTeam) && state.status === "started";
   const isTheirTurn = state.turn && !isSameTeam(state.turn, state.ourTeam) && state.status === "started";
 
@@ -903,6 +1320,7 @@ function updatePhase() {
   if (state.lastPhase && state.lastPhase !== phase) {
     badge.classList.add("flash");
     setTimeout(() => badge.classList.remove("flash"), 500);
+    monitorLog("info", "Phase changed: " + state.lastPhase + " -> " + phase);
   }
   state.lastPhase = phase;
   badge.textContent = label;
@@ -946,6 +1364,12 @@ function updateTimer() {
   el.textContent = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
   el.className = "timer" + (remaining < 60 ? " warning" : "");
   if (remaining <= 0 && timerInterval) clearInterval(timerInterval);
+
+  // Update turn time in monitor
+  if (monitor.lastTurnStart > 0) {
+    const turnElapsed = ((Date.now() - monitor.lastTurnStart) / 1000).toFixed(1);
+    $("m-turn-time").textContent = turnElapsed + "s";
+  }
 }
 
 // ===== FEED =====
@@ -974,13 +1398,11 @@ function addSystemMsg(text) {
 
 // ===== HELPERS =====
 function getOurStance() {
-  // FIX: was `state.ourTeam === state.pros`
   if (isSameTeam(state.ourTeam, state.pros)) return "PRO";
   return "CON";
 }
 
 function getOpponentName() {
-  // FIX: was `state.team1 !== state.ourTeam`
   if (state.team1 && !isSameTeam(state.team1, state.ourTeam)) return state.team1;
   if (state.team2 && !isSameTeam(state.team2, state.ourTeam)) return state.team2;
   return "";
@@ -989,7 +1411,7 @@ function getOpponentName() {
 function getPhase() {
   if (state.messageCount === 0) return "opening";
   const remaining = state.finishTime ? Math.max(0, (state.finishTime - Date.now()) / 1000) : 999;
-  if (remaining < 180) return "closing";
+  if (remaining < 180 && state.messageCount >= 4) return "closing";
   if (state.messageCount === 1) return "rebuttal_first";
   if (state.messageCount <= 3) return "cross_examination";
   return "defense";

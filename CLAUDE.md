@@ -29,7 +29,7 @@ Create a file called CLAUDE.md in the root of the project with exactly this cont
 - Competition: Agent SLAM 2026 — March 28–29, 2026
 - Prize pool: ₹30,000 (1st: ₹15,000 · 2nd: ₹9,000 · 3rd: ₹6,000)
 - Language: Python 3.12
-- OS: Windows (developer machine)
+- OS: Windows (developer machine) and also ubuntu (currently using)
 - Editor: VS Code with Claude Code extension
 
 ---
@@ -228,11 +228,14 @@ TEAM_NAME=                ← team1 or team2 (set per match)
 ## Known Issues / Watchlist
 
 - Before real match day — replace mock server test with sandbox URL from admin. Verify agent connects to real server at least once in sandbox mode before competition.
+- On Windows: use `python -m venv venv` then `venv\Scripts\activate` then `pip install -r requirements.txt`
+- On Ubuntu/Mac: use `python3 -m venv venv` then `source venv/bin/activate` then `pip install -r requirements.txt`
+- The repo does NOT include the venv folder (gitignored). Always recreate it fresh on each machine.
 
 ---
 
-> Last updated: 2026-03-25
-> Next action: Test agent against mock server, then sandbox test with real credentials
+> Last updated: 2026-03-28
+> Next action: Get sandbox credentials from admin, run sandbox test, freeze code before March 28 18:00
 
 ---
 

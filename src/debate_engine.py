@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 
 import anthropic
@@ -8,6 +9,47 @@ from src.state_machine import MatchState
 from src.strategy import build_prompt
 
 logger = logging.getLogger(__name__)
+
+FALLBACK_ARGUMENTS = {
+    "opening": (
+        "The evidence overwhelmingly supports our position on this topic. "
+        "First, the fundamental principles at stake here point clearly in our direction. "
+        "The real-world data consistently demonstrates that our stance aligns with both "
+        "expert consensus and practical outcomes. Second, the economic and social implications "
+        "favor our position when examined rigorously. Third, the long-term trajectory of "
+        "research and policy development reinforces what we are arguing today. We look "
+        "forward to demonstrating this throughout the debate."
+    ),
+    "rebuttal_first": (
+        "Our opponent has presented their case, but upon closer examination, their central "
+        "claim rests on a flawed premise. They have conflated correlation with causation and "
+        "ignored the broader context that undermines their position. The evidence they cited "
+        "actually supports our argument when read in full. We maintain our position and "
+        "challenge them to address the structural weaknesses in their reasoning."
+    ),
+    "cross_examination": (
+        "Our opponent continues to avoid addressing the core issue. Their argument relies "
+        "on selective evidence while ignoring the systemic factors that determine outcomes. "
+        "The logical framework they are using cannot account for the complexity of this "
+        "topic. We have presented multiple independent lines of evidence, each pointing to "
+        "the same conclusion. We ask our opponent directly: how do they reconcile their "
+        "position with the weight of evidence against it?"
+    ),
+    "defense": (
+        "Our opponent's latest attack does not hold up under scrutiny. They have taken our "
+        "argument out of context and responded to a claim we did not make. Our actual "
+        "position, supported by the evidence we have cited, remains uncontested. We have "
+        "consistently demonstrated stronger reasoning and more credible evidence throughout "
+        "this debate. The fundamental question remains answered in our favor."
+    ),
+    "closing": (
+        "In conclusion, we have demonstrated throughout this debate that our position is "
+        "supported by stronger evidence, sounder logic, and a more comprehensive framework. "
+        "Our opponent raised important points, but ultimately could not overcome the "
+        "fundamental strength of our case. The evidence speaks clearly, and we are confident "
+        "the judge will agree that our arguments have carried the day."
+    ),
+}
 
 
 class DebateEngine:
@@ -57,6 +99,7 @@ class DebateEngine:
                 if not text:
                     raise ValueError("Empty response from API")
 
+                text = self._strip_markdown(text)
                 text = self._trim_to_limit(text)
                 logger.info(
                     "Argument ready: %d chars, phase=%s",
@@ -72,9 +115,11 @@ class DebateEngine:
                 if attempt < 2:
                     time.sleep(2)
 
-        raise RuntimeError(
-            f"All 3 API attempts failed. Last error: {last_error}"
+        logger.critical(
+            "All 3 API attempts failed. Last error: %s. Using fallback argument.",
+            last_error,
         )
+        return self._get_fallback(state.debate_phase)
 
     def _extract_text(self, response) -> str:
         text_parts = []
@@ -82,6 +127,17 @@ class DebateEngine:
             if block.type == "text":
                 text_parts.append(block.text)
         return "\n".join(text_parts).strip()
+
+    def _strip_markdown(self, text: str) -> str:
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+        text = re.sub(r'\*(.+?)\*', r'\1', text)
+        text = re.sub(r'__(.+?)__', r'\1', text)
+        text = re.sub(r'_(.+?)_', r'\1', text)
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'```[\s\S]*?```', '', text)
+        text = re.sub(r'`(.+?)`', r'\1', text)
+        text = re.sub(r'^\s*[-*+]\s+', '', text, flags=re.MULTILINE)
+        return text.strip()
 
     def _trim_to_limit(self, text: str) -> str:
         if len(text) <= SAFE_MESSAGE_CHARS:
@@ -105,6 +161,9 @@ class DebateEngine:
             trimmed += "."
 
         return trimmed.strip()
+
+    def _get_fallback(self, phase: str) -> str:
+        return FALLBACK_ARGUMENTS.get(phase, FALLBACK_ARGUMENTS["defense"])
 
     def usage_summary(self) -> str:
         input_cost = (self.total_input_tokens / 1_000_000) * 3.00

@@ -49,7 +49,7 @@ class MatchState:
     def debate_phase(self) -> str:
         if self.message_count == 0:
             return "opening"
-        if self.seconds_remaining_in_match < 180:
+        if self.seconds_remaining_in_match < 180 and self.message_count >= 4:
             return "closing"
         if self.message_count == 1:
             return "rebuttal_first"
