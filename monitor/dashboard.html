@@ -14,6 +14,7 @@
   --bg: #0a0a0f;
   --cyan: #00f5ff;
   --pink: #ff3366;
+  --orange: #ff8c00;
   --neutral: #7c7c9a;
   --success: #00ff88;
   --warning: #ffaa00;
@@ -184,6 +185,41 @@ html, body {
 }
 .timer.warning { color: var(--pink); animation: timerShake 10s infinite; }
 
+/* ========== TEST MODE TOGGLE ========== */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mode-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn.active-live {
+  background: rgba(0, 245, 255, 0.12);
+  color: var(--cyan);
+}
+.mode-btn.active-test {
+  background: rgba(255, 140, 0, 0.15);
+  color: var(--orange);
+}
+.mode-separator {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+
 /* ========== TAB CONTENT ========== */
 .tab-content { display: none; flex: 1; min-height: 0; overflow: hidden; flex-direction: column; }
 .tab-content.active { display: flex; }
@@ -215,6 +251,11 @@ html, body {
   animation: pinkBorderPulse 1.5s ease-in-out infinite;
 }
 
+/* Test mode: orange glow on right panel */
+.panel-right.test-mode-active {
+  border-left: 1px solid rgba(255, 140, 0, 0.2);
+}
+
 .team-name {
   font-family: var(--font-mono);
   font-size: 20px;
@@ -223,6 +264,7 @@ html, body {
 }
 .team-name.cyan { color: var(--cyan); text-shadow: 0 0 20px rgba(0, 245, 255, 0.3); }
 .team-name.pink { color: var(--pink); text-shadow: 0 0 20px rgba(255, 51, 102, 0.3); }
+.team-name.orange { color: var(--orange); text-shadow: 0 0 20px rgba(255, 140, 0, 0.3); }
 
 .stance-badge {
   display: inline-block;
@@ -260,6 +302,12 @@ html, body {
   color: var(--pink);
   border-color: var(--pink);
   text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+}
+.turn-indicator.active-orange {
+  background: rgba(255, 140, 0, 0.1);
+  color: var(--orange);
+  border-color: var(--orange);
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
 }
 
 .stat-row {
@@ -373,6 +421,13 @@ html, body {
   color: var(--text-primary);
   --slide-from: -30px;
 }
+.feed-msg.injected {
+  align-self: flex-start;
+  background: rgba(255, 140, 0, 0.08);
+  border: 1px solid rgba(255, 140, 0, 0.25);
+  color: var(--text-primary);
+  --slide-from: -30px;
+}
 .feed-msg.system {
   align-self: center;
   background: rgba(124, 124, 154, 0.1);
@@ -393,6 +448,114 @@ html, body {
 }
 .feed-msg.ours .sender { color: var(--cyan); }
 .feed-msg.opponent .sender { color: var(--pink); }
+.feed-msg.injected .sender { color: var(--orange); }
+
+/* ========== INJECT PANEL (TEST MODE) ========== */
+.inject-panel {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 140, 0, 0.2);
+  flex-shrink: 0;
+}
+.inject-panel.visible { display: flex; }
+
+.inject-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.inject-label .shortcut-hint {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.inject-textarea {
+  width: 100%;
+  min-height: 90px;
+  max-height: 140px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid rgba(255, 140, 0, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.inject-textarea:focus { border-color: var(--orange); }
+.inject-textarea::placeholder { color: var(--text-secondary); }
+
+.inject-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.inject-char-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.inject-char-count.warn { color: var(--warning); }
+.inject-char-count.over { color: var(--pink); }
+
+.inject-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, var(--orange), #cc6600);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: opacity 0.2s, transform 0.1s;
+  flex-shrink: 0;
+}
+.inject-btn:hover { opacity: 0.85; }
+.inject-btn:active { transform: scale(0.97); }
+.inject-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.inject-status {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  min-height: 14px;
+}
+.inject-status.sent { color: var(--success); }
+.inject-status.error { color: var(--pink); }
+
+/* TEST MODE BANNER */
+.test-mode-banner {
+  display: none;
+  background: rgba(255, 140, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+  padding: 6px 24px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.test-mode-banner.visible { display: block; }
 
 /* ========== MONITOR TAB ========== */
 .monitor-grid {
@@ -497,6 +660,7 @@ html, body {
 .log-entry.log-warn { color: var(--warning); }
 .log-entry.log-error { color: var(--pink); }
 .log-entry.log-success { color: var(--success); }
+.log-entry.log-inject { color: var(--orange); }
 
 .timeline-bar {
   display: flex;
@@ -514,6 +678,7 @@ html, body {
 }
 .timeline-tick.ours { background: var(--cyan); }
 .timeline-tick.theirs { background: var(--pink); }
+.timeline-tick.injected { background: var(--orange); }
 
 /* BOTTOM BAR */
 .bottom-bar {
@@ -686,6 +851,11 @@ html, body {
 
 <!-- MAIN SCREEN -->
 <div id="main-screen">
+  <!-- TEST MODE BANNER -->
+  <div class="test-mode-banner" id="test-mode-banner">
+    ⚠ TEST MODE — Manual Perplexity Inject Active — Not for Live Match
+  </div>
+
   <!-- TOP BAR -->
   <div class="top-bar">
     <div class="logo">AGENT SLAM 2026</div>
@@ -695,6 +865,12 @@ html, body {
       <div class="status-badge" id="status-badge">WAITING</div>
     </div>
     <div class="top-bar-right">
+      <!-- MODE TOGGLE -->
+      <div class="mode-toggle">
+        <button class="mode-btn active-live" id="btn-live-mode">Live</button>
+        <div class="mode-separator"></div>
+        <button class="mode-btn" id="btn-test-mode">Test</button>
+      </div>
       <div class="timer" id="timer">--:--</div>
     </div>
   </div>
@@ -702,7 +878,7 @@ html, body {
   <!-- MATCH TAB -->
   <div class="tab-content active" id="match-tab">
     <div class="middle">
-      <!-- LEFT: OUR AGENT -->
+      <!-- LEFT: OUR CLAUDE AGENT -->
       <div class="panel panel-left" id="panel-left">
         <div class="team-name cyan" id="our-team-name">--</div>
         <div><span class="stance-badge" id="our-stance">--</span></div>
@@ -721,16 +897,33 @@ html, body {
         <div class="feed" id="feed"></div>
       </div>
 
-      <!-- RIGHT: OPPONENT -->
+      <!-- RIGHT: PERPLEXITY MANUAL OPPONENT -->
       <div class="panel panel-right" id="panel-right">
-        <div class="team-name pink" id="opp-team-name">--</div>
+        <div class="team-name orange" id="opp-team-name">Perplexity</div>
         <div><span class="stance-badge" id="opp-stance">--</span></div>
         <div class="turn-indicator" id="opp-turn-ind">WAITING</div>
-        <div class="stat-row"><span>Messages sent</span><span class="val" id="opp-msg-count">0</span></div>
+        <div class="stat-row"><span>Messages injected</span><span class="val" id="opp-msg-count">0</span></div>
         <div class="stat-row"><span>Last message</span><span class="val" id="opp-msg-len">--</span></div>
-        <div class="stat-row"><span>Connection</span><span class="val" id="opp-conn">--</span></div>
+        <div class="stat-row"><span>Mode</span><span class="val" id="opp-conn">Live Observer</span></div>
         <div class="last-arg-label">Last Opponent Argument</div>
         <div class="last-arg pink-tint" id="opp-last-arg">Waiting for opponent...</div>
+
+        <!-- INJECT PANEL — only visible in TEST MODE -->
+        <div class="inject-panel" id="inject-panel">
+          <div class="inject-label">
+            Inject as Perplexity
+            <span class="shortcut-hint">Ctrl+Enter to send</span>
+          </div>
+          <textarea
+            class="inject-textarea"
+            id="inject-textarea"
+            placeholder="Paste Perplexity's counter-argument here, then click Send..."></textarea>
+          <div class="inject-footer">
+            <span class="inject-char-count" id="inject-char-count">0 / 3000</span>
+            <button class="inject-btn" id="inject-btn">Send as Opponent</button>
+          </div>
+          <div class="inject-status" id="inject-status"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -838,6 +1031,8 @@ const CONFIG = {
   TEAM_NAME: "",
 };
 
+const OPPONENT_NAME = "Perplexity";
+
 const PHASES_ORDER = ["opening", "rebuttal_first", "cross_examination", "defense", "closing"];
 const PHASE_LABELS = {
   opening: "OPENING",
@@ -852,9 +1047,10 @@ const state = {
   finishTime: 0, pros: "", cons: "", turn: "", status: "pending",
   conversation: [], ourTeam: "", messageCount: 0, oppMessageCount: 0,
   connected: false, lastPhase: "",
+  testMode: false,
+  injectCount: 0,
 };
 
-// Monitor state
 const monitor = {
   responseTimes: [],
   lastTurnStart: 0,
@@ -869,12 +1065,9 @@ const monitor = {
 
 let ws = null;
 let timerInterval = null;
-let turnTimerInterval = null;
 
-// ===== DOM refs =====
 const $ = (id) => document.getElementById(id);
 
-// ===== TEAM MATCHING (case-insensitive) =====
 function isSameTeam(a, b) {
   if (!a || !b) return false;
   return a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -889,6 +1082,108 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     $(btn.dataset.tab).classList.add("active");
   });
 });
+
+// ===== TEST MODE TOGGLE =====
+function setTestMode(enabled) {
+  state.testMode = enabled;
+
+  $("btn-live-mode").className = "mode-btn" + (enabled ? "" : " active-live");
+  $("btn-test-mode").className = "mode-btn" + (enabled ? " active-test" : "");
+
+  $("test-mode-banner").classList.toggle("visible", enabled);
+  $("inject-panel").classList.toggle("visible", enabled);
+  $("panel-right").classList.toggle("test-mode-active", enabled);
+
+  $("opp-conn").textContent = enabled ? "Manual (Test)" : "Live Observer";
+
+  monitorLog(enabled ? "inject" : "info",
+    enabled ? "TEST MODE ON — Perplexity inject panel active" : "LIVE MODE — inject panel hidden");
+}
+
+$("btn-live-mode").addEventListener("click", () => setTestMode(false));
+$("btn-test-mode").addEventListener("click", () => setTestMode(true));
+
+// ===== INJECT LOGIC =====
+const injectTextarea = $("inject-textarea");
+const injectBtn = $("inject-btn");
+const injectCharCount = $("inject-char-count");
+const injectStatus = $("inject-status");
+
+injectTextarea.addEventListener("input", () => {
+  const len = injectTextarea.value.length;
+  injectCharCount.textContent = len + " / 3000";
+  injectCharCount.className = "inject-char-count" + (len > 3000 ? " over" : len > 2500 ? " warn" : "");
+  injectBtn.disabled = len === 0 || len > 3000;
+});
+
+injectTextarea.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "Enter") {
+    e.preventDefault();
+    if (!injectBtn.disabled) injectOpponentMessage();
+  }
+});
+
+injectBtn.addEventListener("click", injectOpponentMessage);
+
+function injectOpponentMessage() {
+  const msg = injectTextarea.value.trim();
+  if (!msg) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showInjectStatus("error", "Not connected to WebSocket");
+    return;
+  }
+
+  const payload = {
+    type: "debate-message",
+    from: OPPONENT_NAME,
+    timestamp: String(Date.now()),
+    data: { message: msg },
+  };
+
+  try {
+    ws.send(JSON.stringify(payload));
+    state.injectCount++;
+
+    // Immediately reflect in UI so you don't wait for echo
+    state.conversation.push({
+      team: OPPONENT_NAME,
+      message: msg,
+      timestamp: String(Date.now()),
+      isOurs: false,
+      injected: true,
+    });
+    state.oppMessageCount++;
+    $("opp-last-arg").textContent = msg;
+    $("opp-msg-len").textContent = msg.length + " chars";
+    addChatMsg(msg, false, OPPONENT_NAME, true);
+    updateAll();
+
+    monitorLog("inject", "Injected opponent msg: " + msg.length + " chars — agent turn triggered");
+    showInjectStatus("sent", "Sent! Agent is generating response...");
+    injectTextarea.value = "";
+    injectCharCount.textContent = "0 / 3000";
+    injectCharCount.className = "inject-char-count";
+    injectBtn.disabled = true;
+
+    // Reset turn start for response time tracking
+    monitor.lastTurnStart = Date.now();
+
+  } catch (e) {
+    showInjectStatus("error", "Send failed: " + e.message);
+    monitorLog("error", "Inject failed: " + e.message);
+  }
+}
+
+function showInjectStatus(type, msg) {
+  injectStatus.textContent = msg;
+  injectStatus.className = "inject-status " + type;
+  if (type === "sent") {
+    setTimeout(() => {
+      injectStatus.textContent = "";
+      injectStatus.className = "inject-status";
+    }, 4000);
+  }
+}
 
 // ===== MONITOR LOGGING =====
 function monitorLog(level, msg) {
@@ -908,7 +1203,6 @@ function monitorLog(level, msg) {
 
 // ===== MONITOR UPDATE =====
 function updateMonitor() {
-  // Health indicators
   const wsDot = $("health-ws");
   const wsVal = $("health-ws-val");
   if (state.connected) {
@@ -935,7 +1229,6 @@ function updateMonitor() {
     matchVal.textContent = "Waiting";
   }
 
-  // Timing
   const avgResp = monitor.responseTimes.length > 0
     ? (monitor.responseTimes.reduce((a, b) => a + b, 0) / monitor.responseTimes.length).toFixed(1) + "s"
     : "--";
@@ -949,7 +1242,6 @@ function updateMonitor() {
   $("m-reconnects").textContent = monitor.reconnectCount;
   $("m-drops").textContent = monitor.droppedMessages;
 
-  // Quality
   const avgChars = monitor.ourCharCounts.length > 0
     ? Math.round(monitor.ourCharCounts.reduce((a, b) => a + b, 0) / monitor.ourCharCounts.length)
     : "--";
@@ -964,7 +1256,6 @@ function updateMonitor() {
   $("m-fallbacks").textContent = monitor.fallbackCount;
   $("m-sources").textContent = monitor.citedSources.size;
 
-  // API health
   const apiDot = $("health-api");
   const apiVal = $("health-api-val");
   if (monitor.fallbackCount > 0) {
@@ -978,7 +1269,6 @@ function updateMonitor() {
     apiVal.textContent = "--";
   }
 
-  // Turn execution health
   const turnDot = $("health-turn");
   const turnVal = $("health-turn-val");
   if (monitor.responseTimes.length > 0) {
@@ -998,7 +1288,6 @@ function updateMonitor() {
     turnVal.textContent = "--";
   }
 
-  // Timeline
   updateTimeline();
 }
 
@@ -1011,7 +1300,9 @@ function updateTimeline() {
     tick.className = "timeline-tick";
     if (i < state.conversation.length) {
       const msg = state.conversation[i];
-      tick.classList.add(msg.isOurs ? "ours" : "theirs");
+      if (msg.isOurs) tick.classList.add("ours");
+      else if (msg.injected) tick.classList.add("injected");
+      else tick.classList.add("theirs");
       const charLen = (msg.message || "").length;
       const height = Math.max(4, Math.min(24, Math.round(charLen / 3000 * 24)));
       tick.style.height = height + "px";
@@ -1109,6 +1400,9 @@ function handleMessage(parsed) {
     case "debate-message":
       handleDebateMessage(parsed);
       break;
+    case "sandbox-message":
+      handleSandboxMessage(parsed);
+      break;
     case "match-paused":
       state.status = "paused";
       updateStatusBadge();
@@ -1156,7 +1450,6 @@ function handleMatchState(data) {
   if (isOurTurn && state.status === "started") {
     monitor.lastTurnStart = Date.now();
   }
-
   updateAll();
 }
 
@@ -1174,7 +1467,12 @@ function handleDebateMessage(parsed) {
   const ts = parsed.timestamp || "";
   const isOurs = isSameTeam(team, state.ourTeam);
 
-  state.conversation.push({ team, message: msg, timestamp: ts, isOurs });
+  // In test mode, skip echoed inject messages (already added locally)
+  const isInjectedEcho = state.testMode && isSameTeam(team, OPPONENT_NAME);
+
+  if (!isInjectedEcho) {
+    state.conversation.push({ team, message: msg, timestamp: ts, isOurs });
+  }
 
   if (isOurs) {
     state.messageCount++;
@@ -1189,16 +1487,46 @@ function handleDebateMessage(parsed) {
       monitorLog("info", "Response time: " + elapsed.toFixed(1) + "s");
       monitor.lastTurnStart = 0;
     }
-  } else {
+
+    addChatMsg(msg, true, team, false);
+  } else if (!isInjectedEcho) {
     state.oppMessageCount++;
     $("opp-last-arg").textContent = msg;
     $("opp-msg-len").textContent = msg.length + " chars";
     monitorLog("info", "Opponent argued: " + msg.length + " chars");
     monitor.lastTurnStart = Date.now();
+    addChatMsg(msg, false, team, false);
   }
 
-  addChatMsg(msg, isOurs, team);
   updateAll();
+}
+
+function handleSandboxMessage(parsed) {
+  // Sandbox echo of our own message — update left panel
+  const msg = (parsed.data || {}).message || "";
+  if (msg) {
+    $("our-last-arg").textContent = msg;
+    monitorLog("info", "Sandbox echo: " + msg.length + " chars");
+    monitor.ourCharCounts.push(msg.length);
+    extractSources(msg);
+
+    if (monitor.lastTurnStart > 0) {
+      const elapsed = (Date.now() - monitor.lastTurnStart) / 1000;
+      monitor.responseTimes.push(elapsed);
+      monitorLog("info", "Response time: " + elapsed.toFixed(1) + "s");
+      monitor.lastTurnStart = 0;
+    }
+
+    state.messageCount++;
+    state.conversation.push({
+      team: state.ourTeam,
+      message: msg,
+      timestamp: String(Date.now()),
+      isOurs: true,
+    });
+    addChatMsg(msg, true, state.ourTeam, false);
+    updateAll();
+  }
 }
 
 function handleMatchResumed(data) {
@@ -1220,6 +1548,7 @@ function handleMatchFinish() {
     '<p>Our team: <span>' + state.ourTeam + '</span> (' + getOurStance() + ')</p>' +
     '<p>Messages sent: <span>' + state.messageCount + '</span></p>' +
     '<p>Opponent messages: <span>' + state.oppMessageCount + '</span></p>' +
+    '<p>Injected messages: <span>' + state.injectCount + '</span></p>' +
     '<p>Total exchanges: <span>' + state.conversation.length + '</span></p>';
   $("finish-overlay").classList.add("active");
 }
@@ -1238,9 +1567,8 @@ function handlePreviousMessages(data) {
       state.messageCount++;
       monitor.ourCharCounts.push((entry.message || "").length);
       extractSources(entry.message || "");
-    }
-    else state.oppMessageCount++;
-    addChatMsg(entry.message || "", isOurs, entry.team || "");
+    } else state.oppMessageCount++;
+    addChatMsg(entry.message || "", isOurs, entry.team || "", false);
   });
   addSystemMsg("Loaded " + convs.length + " previous messages");
   updateAll();
@@ -1259,13 +1587,10 @@ function updateAll() {
 }
 
 function updateTeams() {
-  const oppTeam = getOpponentName();
-  $("opp-team-name").textContent = oppTeam || "--";
-
-  const ourStance = getOurStance();
-  const oppStance = ourStance === "PRO" ? "CON" : "PRO";
+  const oppStance = getOurStance() === "PRO" ? "CON" : "PRO";
 
   const ourBadge = $("our-stance");
+  const ourStance = getOurStance();
   ourBadge.textContent = ourStance;
   ourBadge.className = "stance-badge " + (ourStance === "PRO" ? "pro" : "con");
 
@@ -1273,7 +1598,7 @@ function updateTeams() {
   oppBadge.textContent = oppStance;
   oppBadge.className = "stance-badge " + (oppStance === "PRO" ? "pro" : "con");
 
-  $("opp-conn").textContent = state.status === "started" ? "Active" : state.status;
+  $("opp-conn").textContent = state.testMode ? "Manual (Test)" : (state.status === "started" ? "Active" : state.status);
 }
 
 function updateStatusBadge() {
@@ -1302,14 +1627,16 @@ function updateTurnIndicators() {
   ourInd.className = "turn-indicator" + (isOurTurn ? " active-cyan" : "");
 
   const oppInd = $("opp-turn-ind");
-  oppInd.textContent = isTheirTurn ? "THEIR TURN" : "WAITING";
-  oppInd.className = "turn-indicator" + (isTheirTurn ? " active-pink" : "");
+  if (state.testMode) {
+    oppInd.textContent = "PASTE & SEND";
+    oppInd.className = "turn-indicator active-orange";
+  } else {
+    oppInd.textContent = isTheirTurn ? "THEIR TURN" : "WAITING";
+    oppInd.className = "turn-indicator" + (isTheirTurn ? " active-pink" : "");
+  }
 
-  const panelL = $("panel-left");
-  panelL.classList.toggle("our-turn", isOurTurn);
-
-  const panelR = $("panel-right");
-  panelR.classList.toggle("their-turn", isTheirTurn);
+  $("panel-left").classList.toggle("our-turn", isOurTurn);
+  $("panel-right").classList.toggle("their-turn", isTheirTurn && !state.testMode);
 }
 
 function updatePhase() {
@@ -1365,7 +1692,6 @@ function updateTimer() {
   el.className = "timer" + (remaining < 60 ? " warning" : "");
   if (remaining <= 0 && timerInterval) clearInterval(timerInterval);
 
-  // Update turn time in monitor
   if (monitor.lastTurnStart > 0) {
     const turnElapsed = ((Date.now() - monitor.lastTurnStart) / 1000).toFixed(1);
     $("m-turn-time").textContent = turnElapsed + "s";
@@ -1373,14 +1699,18 @@ function updateTimer() {
 }
 
 // ===== FEED =====
-function addChatMsg(text, isOurs, team) {
+function addChatMsg(text, isOurs, team, injected) {
   const feed = $("feed");
   const div = document.createElement("div");
-  div.className = "feed-msg " + (isOurs ? "ours" : "opponent");
+  if (isOurs) div.className = "feed-msg ours";
+  else if (injected) div.className = "feed-msg injected";
+  else div.className = "feed-msg opponent";
+
   const senderDiv = document.createElement("div");
   senderDiv.className = "sender";
   senderDiv.textContent = isOurs ? (state.ourTeam || "US") : (team || "OPPONENT");
   div.appendChild(senderDiv);
+
   const preview = text.length > 300 ? text.substring(0, 300) + "..." : text;
   div.appendChild(document.createTextNode(preview));
   feed.appendChild(div);
@@ -1400,12 +1730,6 @@ function addSystemMsg(text) {
 function getOurStance() {
   if (isSameTeam(state.ourTeam, state.pros)) return "PRO";
   return "CON";
-}
-
-function getOpponentName() {
-  if (state.team1 && !isSameTeam(state.team1, state.ourTeam)) return state.team1;
-  if (state.team2 && !isSameTeam(state.team2, state.ourTeam)) return state.team2;
-  return "";
 }
 
 function getPhase() {
