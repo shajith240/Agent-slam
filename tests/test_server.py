@@ -3,18 +3,11 @@ Test Server — Agent SLAM 2026
 ==============================
 Clean WebSocket broker for local testing.
 
-Brokers two connections:
-  1. Bot   (agent.py connects here)
-  2. Dashboard  (monitor/dashboard.html connects here)
-
-The dashboard injects opponent messages and controls the match.
-The server forwards them to the bot using the real competition protocol.
-
 Usage:
-  python tests/test_server.py
+  python3 tests/test_server.py
 
-Then in a second terminal:
-  WS_URL=ws://localhost:8766 python agent.py --sandbox
+Then:
+  SANDBOX_WS_URL=ws://localhost:8766 python3 agent.py --sandbox --topic "..." --pros team1 --cons team2
 
 Then open monitor/dashboard.html in a browser.
 """
@@ -46,6 +39,7 @@ class Match:
     def __init__(self):
         self.bot_ws = None
         self.dash_ws = None
+        self.dash_id = 0  # track which dashboard is current
         self.started = False
         self.topic = ""
         self.description = ""
@@ -99,6 +93,7 @@ async def send(ws, payload):
 
 
 async def to_dash(payload):
+    """Send to current dashboard. Safe to call if no dashboard connected."""
     if match.dash_ws:
         try:
             await match.dash_ws.send(json.dumps(payload))
@@ -130,31 +125,22 @@ async def handle_bot(ws, first_msg=None):
                 match.bot_msgs += 1
                 log.info("Bot argument #%d: %d chars", match.bot_msgs, len(text))
 
-                # Ack to bot
                 await send(ws, {
-                    "type": "info",
-                    "from": "system",
-                    "timestamp": ts(),
+                    "type": "info", "from": "system", "timestamp": ts(),
                     "data": {"message": "argument received"},
                 })
 
-                # Forward to dashboard
                 await to_dash({
-                    "type": "debate-message",
-                    "from": match.bot_team,
-                    "timestamp": ts(),
-                    "data": {"message": text},
+                    "type": "debate-message", "from": match.bot_team,
+                    "timestamp": ts(), "data": {"message": text},
                 })
 
-                # Switch turn to opponent — bot waits
+                # Switch turn to opponent
                 await send(ws, match.match_state("started", match.opp_team))
 
                 await to_dash({
                     "type": "server-event",
-                    "data": {
-                        "message": f"Bot sent #{match.bot_msgs} ({len(text)} chars). Paste opponent response.",
-                        "waitingForOpponent": True,
-                    },
+                    "data": {"message": f"Bot sent #{match.bot_msgs} ({len(text)} chars). Paste opponent response."},
                 })
             else:
                 log.debug("Bot sent: %s", msg_type)
@@ -169,8 +155,11 @@ async def handle_bot(ws, first_msg=None):
 # ── Dashboard handler ────────────────────────────────
 
 async def handle_dash(ws):
+    # Assign a unique ID so only the current dashboard can clear dash_ws
+    match.dash_id += 1
+    my_id = match.dash_id
     match.dash_ws = ws
-    log.info("Dashboard connected")
+    log.info("Dashboard #%d connected", my_id)
 
     await send(ws, {
         "type": "server-event",
@@ -200,17 +189,25 @@ async def handle_dash(ws):
             elif cmd == "end-match":
                 await cmd_end()
             elif cmd == "dashboard-hello":
-                log.info("Dashboard hello")
+                log.info("Dashboard #%d hello", my_id)
 
     except websockets.exceptions.ConnectionClosed:
-        log.info("Dashboard disconnected")
+        log.info("Dashboard #%d disconnected", my_id)
     finally:
-        match.dash_ws = None
+        # Only clear dash_ws if WE are still the current dashboard
+        if match.dash_id == my_id:
+            match.dash_ws = None
 
 
 async def cmd_start(data):
     if not match.bot_ws:
         await to_dash({"type": "server-event", "data": {"message": "ERROR: Bot not connected. Start agent.py first."}})
+        return
+
+    # Prevent re-starting if match already running
+    if match.started and match.bot_msgs > 0:
+        log.warning("Match already in progress (bot has sent %d msgs). Ignoring start-match.", match.bot_msgs)
+        await to_dash({"type": "server-event", "data": {"message": "Match already in progress. Ignoring duplicate start."}})
         return
 
     match.topic = data.get("topic", "AI will do more harm than good")
@@ -228,16 +225,12 @@ async def cmd_start(data):
 
     bot = match.bot_ws
 
-    # Welcome
     await send(bot, {
-        "type": "welcome",
-        "from": "system",
-        "timestamp": ts(),
+        "type": "welcome", "from": "system", "timestamp": ts(),
         "data": {"message": "Welcome to Agent SLAM Test Server"},
     })
 
-    # Single match-state(started) — this is the ONLY trigger for opening argument
-    # No match-update sent separately to avoid double-fire
+    # Single match-state(started) — the ONLY trigger for opening argument
     await send(bot, match.match_state("started", match.bot_team))
 
     await to_dash({
@@ -266,21 +259,17 @@ async def cmd_inject(data):
 
     # Send opponent debate-message to bot
     await send(match.bot_ws, {
-        "type": "debate-message",
-        "from": match.opp_team,
-        "timestamp": ts(),
-        "data": {"message": text},
+        "type": "debate-message", "from": match.opp_team,
+        "timestamp": ts(), "data": {"message": text},
     })
 
     # Echo to dashboard
     await to_dash({
-        "type": "debate-message",
-        "from": match.opp_team,
-        "timestamp": ts(),
-        "data": {"message": text},
+        "type": "debate-message", "from": match.opp_team,
+        "timestamp": ts(), "data": {"message": text},
     })
 
-    # Give bot its turn via match-state (single signal, no double-fire)
+    # Give bot its turn via match-state (single signal)
     await asyncio.sleep(0.3)
     await send(match.bot_ws, match.match_state("started", match.bot_team))
 
@@ -296,7 +285,6 @@ async def cmd_set_time(data):
     log.info("Timer set to %ds", seconds)
 
     if match.bot_ws:
-        # Send updated time but keep turn on opponent so bot doesn't fire
         await send(match.bot_ws, match.match_state("started", match.opp_team))
 
     await to_dash({
@@ -309,9 +297,7 @@ async def cmd_end():
     log.info("Match ending")
     if match.bot_ws:
         await send(match.bot_ws, {
-            "type": "match-finish",
-            "from": "system",
-            "timestamp": ts(),
+            "type": "match-finish", "from": "system", "timestamp": ts(),
             "data": {"message": "Match ended."},
         })
     match.started = False
@@ -341,7 +327,7 @@ async def main():
     log.info("  ws://localhost:%d", PORT)
     log.info("=" * 50)
     log.info("1. Open monitor/dashboard.html in browser")
-    log.info("2. Run: WS_URL=ws://localhost:%d python agent.py --sandbox", PORT)
+    log.info("2. Run: SANDBOX_WS_URL=ws://localhost:%d python3 agent.py --sandbox", PORT)
     log.info("3. Configure match in dashboard -> Start")
     log.info("=" * 50)
 
