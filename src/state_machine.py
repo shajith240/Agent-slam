@@ -112,6 +112,25 @@ class MatchState:
         self.status = data.get("status", self.status)
         self.remaining_time = data.get("remainingTime", self.remaining_time)
 
+        # Auto-detect our team name from match-state if it doesn't match
+        # Handles case where server uses "team1"/"team2" instead of "AS11"
+        if self.our_team and self.team1 and self.our_team not in (self.team1, self.team2):
+            import logging
+            _log = logging.getLogger(__name__)
+            # Check if our configured name is a substring of either team
+            if self.our_team.lower() in self.team1.lower():
+                _log.warning("Auto-mapped TEAM_NAME '%s' → '%s'", self.our_team, self.team1)
+                self.our_team = self.team1
+            elif self.our_team.lower() in self.team2.lower():
+                _log.warning("Auto-mapped TEAM_NAME '%s' → '%s'", self.our_team, self.team2)
+                self.our_team = self.team2
+            else:
+                _log.error(
+                    "CRITICAL: TEAM_NAME '%s' not found in match-state "
+                    "(team1='%s', team2='%s'). Bot cannot identify its turn!",
+                    self.our_team, self.team1, self.team2,
+                )
+
         old_turn = self.turn
         self.turn = data.get("turn", self.turn)
 

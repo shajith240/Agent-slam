@@ -1,0 +1,1 @@
+13:53:25  SERVER ERROR: Invalid format. Send JSON: { "type": "sandbox-message", "data": { "message": "..." } }
