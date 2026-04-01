@@ -37,6 +37,14 @@ class WSClient:
         self._research_done = False
 
     async def connect(self) -> None:
+        '''
+        This function handles our connection with server
+
+        Improvements :
+        1. Server might not connect in the first try so updating our internal last_diconnect_time attribute during handling other exceptions 
+           than ConnectionClosed doesn't make sense
+           
+        '''
         while self.running:
             try:
                 async with websockets.connect(self.ws_url) as ws:
@@ -58,6 +66,13 @@ class WSClient:
                 await self.handle_reconnect()
 
     async def authenticate(self) -> None:
+        '''
+        Handles authentiction with server
+
+        Improvements :
+        1. Use json.dumps(auth_payload) to make sure that dict is serialized into JSON formatted string
+        
+        '''
         if not TEAM_EMAIL or not TEAM_PASSWORD:
             logger.info("No TEAM_EMAIL/TEAM_PASSWORD set — skipping auth handshake")
             return
@@ -73,6 +88,13 @@ class WSClient:
         logger.info("Auth handshake sent for: %s", TEAM_EMAIL)
 
     async def handle_reconnect(self) -> None:
+        '''
+        This function handles reconnection of server untill we reach our max connection limit
+
+        Improvements that can be done in this function:
+        1. Handle different error codes from server such as 401 which requires us manually to change the env variables
+    
+        '''
         self.reconnect_attempts += 1
 
         if self.reconnect_attempts > MAX_RECONNECT_ATTEMPTS:
@@ -252,6 +274,9 @@ class WSClient:
         logger.info("Loaded %d previous messages", len(conversations))
 
     async def take_turn(self) -> None:
+        '''
+        This function help us check the messages and update the attribute _current_turn_id as passed
+        '''
         if not self.state.is_our_turn:
             logger.debug("take_turn called but not our turn, skipping")
             return
@@ -267,7 +292,8 @@ class WSClient:
                 return
 
         turn_id = str(uuid.uuid4())[:8]
-
+        ''' This if statement makes sure once our turn is called and our message is not returned we ignore all the messages the server sends ensures that duplicate messages
+        user_left and user_joined doesn't affect the searching process '''
         if self._turn_in_progress:
             logger.debug("Turn already in progress (%s) — skipping duplicate trigger", self._current_turn_id)
             return
